@@ -3,13 +3,10 @@ package com.example.soen345_project;
 import android.os.Bundle;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,59 +14,46 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
-    private FirebaseFirestore db;
+    private DatabaseReference db;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Initialize Firestore
-        db = FirebaseFirestore.getInstance();
+        // Initialize Realtime Database
+        db = FirebaseDatabase.getInstance().getReference();
 
-        // User 1 db test (John Smith)
+        // Reference to "users" node
+        DatabaseReference usersRef = db.child("users");
 
+        // User 1 test (John Smith)
         Map<String, Object> user1 = new HashMap<>();
         user1.put("first", "John");
         user1.put("last", "Smith");
         user1.put("born", 1999);
 
-        db.collection("users")
-                .add(user1)
-                .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-                    @Override
-                    public void onSuccess(DocumentReference documentReference) {
-                        Log.d(TAG, "DocumentSnapshot added with ID: " + documentReference.getId());
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.w(TAG, "Error adding document", e);
-                    }
-                });
+        String userId1 = usersRef.push().getKey();
+
+        usersRef.child(userId1).setValue(user1)
+                .addOnSuccessListener(aVoid ->
+                        Log.d(TAG, "User 1 added with ID: " + userId1))
+                .addOnFailureListener(e ->
+                        Log.w(TAG, "Error adding user 1", e));
 
 
-        // User 2 db test (Alan Turing)
-
+        // User 2 test (Sarah Jones)
         Map<String, Object> user2 = new HashMap<>();
         user2.put("first", "Sarah");
         user2.put("last", "Jones");
         user2.put("born", 2000);
 
-        db.collection("users")
-                .add(user2)
-                .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
-                    @Override
-                    public void onSuccess(DocumentReference documentReference) {
-                        Log.d(TAG, "DocumentSnapshot added with ID: " + documentReference.getId());
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.w(TAG, "Error adding document", e);
-                    }
-                });
+        String userId2 = usersRef.push().getKey();
 
+        usersRef.child(userId2).setValue(user2)
+                .addOnSuccessListener(aVoid ->
+                        Log.d(TAG, "User 2 added with ID: " + userId2))
+                .addOnFailureListener(e ->
+                        Log.w(TAG, "Error adding user 2", e));
     }
 }
