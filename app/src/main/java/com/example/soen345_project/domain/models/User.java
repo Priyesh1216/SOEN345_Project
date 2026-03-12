@@ -1,4 +1,4 @@
-package com.example.soen345_project.models;
+package com.example.soen345_project.domain.models;
 
 public class User {
     private String id;
@@ -7,7 +7,9 @@ public class User {
     private String phoneNumber;
     private boolean isAdmin = false;
 
-    public User(String name, String email, String phoneNumber){
+    public User() {}
+
+    public User(String id, String name, String email, String phoneNumber){
         this.name = name;
         this.email = email;
         this.phoneNumber = phoneNumber;
@@ -44,4 +46,7 @@ public class User {
     public void setIsAdmin(boolean isAdmin){
         this.isAdmin = isAdmin;
     }
+
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
 }
