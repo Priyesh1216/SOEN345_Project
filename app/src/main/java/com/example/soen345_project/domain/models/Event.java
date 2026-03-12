@@ -1,4 +1,4 @@
-package com.example.soen345_project.models;
+package com.example.soen345_project.domain.models;
 
 import java.util.Date;
 
