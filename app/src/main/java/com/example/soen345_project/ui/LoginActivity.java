@@ -1,2 +1,4 @@
-package com.example.soen345_project.ui;public class LoginActivity {
+package com.example.soen345_project.ui;
+
+public class LoginActivity {
 }
