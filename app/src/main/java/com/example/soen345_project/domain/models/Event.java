@@ -34,6 +34,10 @@ public class Event{
     public void cancelEvent() { this.eventStatus = EventStatus.CANCELLED; }
     public boolean isActive() { return eventStatus == EventStatus.ACTIVE; }
 
+    public String getId() { 
+        return id; 
+    }
+
     public String getTitle(){
         return title;
     }
@@ -53,6 +57,10 @@ public class Event{
     public int getTotalSeats() { return totalSeats; }
     public int getOpenSeats() { return openSeats; }
     public EventStatus getEventStatus() { return eventStatus; }
+
+    public void setId(String id) {
+        this.id = id; 
+    }
 
     public void setTitle(String title){
         this.title = title;

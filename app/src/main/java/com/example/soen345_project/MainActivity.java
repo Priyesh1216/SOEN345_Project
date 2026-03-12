@@ -5,55 +5,46 @@ import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
+import com.example.soen345_project.data.FirebaseRepository;
+import com.example.soen345_project.domain.models.Event;
+import com.example.soen345_project.domain.services.EventService;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
-    private DatabaseReference db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Initialize Realtime Database
-        db = FirebaseDatabase.getInstance().getReference();
+        FirebaseRepository repo = new FirebaseRepository();
 
-        // Reference to "users" node
-        DatabaseReference usersRef = db.child("users");
+        // test saveEvent
+        Event event = new Event("Test Concert", new Date(), "Montreal", "Music", 100);
+        repo.saveEvent(event, new EventService.EventCallback() {
+            @Override
+            public void onSuccess(Event e) {
+                Log.d(TAG, "Event saved with ID: " + e.getId());
 
-        // User 1 test (John Smith)
-        Map<String, Object> user1 = new HashMap<>();
-        user1.put("first", "John");
-        user1.put("last", "Smith");
-        user1.put("born", 1999);
-
-        String userId1 = usersRef.push().getKey();
-
-        usersRef.child(userId1).setValue(user1)
-                .addOnSuccessListener(aVoid ->
-                        Log.d(TAG, "User 1 added with ID: " + userId1))
-                .addOnFailureListener(e ->
-                        Log.w(TAG, "Error adding user 1", e));
-
-
-        // User 2 test (Sarah Jones)
-        Map<String, Object> user2 = new HashMap<>();
-        user2.put("first", "Sarah");
-        user2.put("last", "Jones");
-        user2.put("born", 2000);
-
-        String userId2 = usersRef.push().getKey();
-
-        usersRef.child(userId2).setValue(user2)
-                .addOnSuccessListener(aVoid ->
-                        Log.d(TAG, "User 2 added with ID: " + userId2))
-                .addOnFailureListener(e ->
-                        Log.w(TAG, "Error adding user 2", e));
+                // test getEvent using the ID we just got back
+                repo.getEvent(e.getId(), new FirebaseRepository.GetEventCallback() {
+                    @Override
+                    public void onSuccess(Event fetchedEvent) {
+                        Log.d(TAG, "Event fetched: " + fetchedEvent.getTitle());
+                    }
+                    @Override
+                    public void onFailure(Exception ex) {
+                        Log.e(TAG, "getEvent failed: " + ex.getMessage());
+                    }
+                });
+            }
+            @Override
+            public void onFailure(Exception e) {
+                Log.e(TAG, "saveEvent failed: " + e.getMessage());
+            }
+        });
     }
 }
