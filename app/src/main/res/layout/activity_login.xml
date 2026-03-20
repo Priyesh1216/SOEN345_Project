@@ -2,68 +2,93 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="32dp"
+    android:background="#FFFFFF"
     android:gravity="center"
-    android:background="#FFFFFF">
+    android:orientation="vertical"
+    android:padding="32dp">
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Welcome!"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        android:gravity="center"
         android:layout_marginBottom="8dp"
-        android:textColor="#333333" />
+        android:gravity="center"
+        android:text="Welcome!"
+        android:textColor="#333333"
+        android:textSize="28sp"
+        android:textStyle="bold" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Sign in with your email or phone number"
-        android:textSize="13sp"
-        android:gravity="center"
         android:layout_marginBottom="24dp"
+        android:gravity="center"
+        android:text="Sign in with either your email or phone number"
+        android:textColor="#888888"
+        android:textSize="13sp" />
+
+    <EditText
+        android:id="@+id/etEmail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:background="#F0F0F0"
+        android:hint="Email (e.g example@mail.com)"
+        android:inputType="textEmailAddress"
+        android:padding="16dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:gravity="center"
+        android:text="OR"
         android:textColor="#888888" />
 
     <EditText
-        android:id="@+id/etEmailOrPhone"
+        android:id="@+id/etPhone"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Email or Phone Number"
-        android:inputType="textEmailAddress"
-        android:padding="16dp"
+        android:layout_marginBottom="16dp"
         android:background="#F0F0F0"
-        android:layout_marginBottom="16dp" />
+        android:hint="Phone Number (e.g. +15141234567)"
+        android:inputType="phone"
+        android:padding="16dp" />
+
+    <View
+        android:layout_width="200dp"
+        android:layout_height="1dp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="16dp"
+        android:background="#DDDDDD" />
 
     <EditText
         android:id="@+id/etPassword"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:background="#F0F0F0"
         android:hint="Password"
         android:inputType="textPassword"
-        android:padding="16dp"
-        android:background="#F0F0F0"
-        android:layout_marginBottom="24dp" />
+        android:padding="16dp" />
 
     <Button
         android:id="@+id/btnLogin"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Login"
         android:padding="12dp"
-        android:textSize="16sp"
-        android:textColor="#FFFFFF" />
+        android:text="Login"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp" />
 
     <Button
         android:id="@+id/btnGoToRegister"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Sign Up (Create Account)"
-        android:padding="12dp"
-        android:textSize="16sp"
         android:layout_marginTop="8dp"
+        android:backgroundTint="#E3F2FD"
+        android:padding="12dp"
+        android:text="Sign Up (Create Account)"
         android:textColor="#2196F3"
-        android:backgroundTint="#E3F2FD" />
+        android:textSize="16sp" />
 
 </LinearLayout>
