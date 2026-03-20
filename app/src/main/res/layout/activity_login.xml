@@ -14,14 +14,23 @@
         android:textSize="28sp"
         android:textStyle="bold"
         android:gravity="center"
-        android:layout_marginBottom="32dp"
+        android:layout_marginBottom="8dp"
         android:textColor="#333333" />
 
-    <EditText
-        android:id="@+id/etEmail"
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Email"
+        android:text="Sign in with your email or phone number"
+        android:textSize="13sp"
+        android:gravity="center"
+        android:layout_marginBottom="24dp"
+        android:textColor="#888888" />
+
+    <EditText
+        android:id="@+id/etEmailOrPhone"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Email or Phone Number"
         android:inputType="textEmailAddress"
         android:padding="16dp"
         android:background="#F0F0F0"
@@ -47,7 +56,7 @@
         android:textColor="#FFFFFF" />
 
     <Button
-        android:id="@+id/btnRegister"
+        android:id="@+id/btnGoToRegister"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Sign Up (Create Account)"
