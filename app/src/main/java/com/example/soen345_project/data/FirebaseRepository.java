@@ -26,6 +26,7 @@ public class FirebaseRepository {
 
     private final DatabaseReference db = FirebaseDatabase.getInstance().getReference();
 
+
     // --- User ---
 
     public void getUser(String userId, GetUserCallback callback) {
@@ -42,15 +43,11 @@ public class FirebaseRepository {
             .addOnFailureListener(e -> callback.onFailure(e));
     }
 
-    public void saveUser(User user, SimpleCallback callback) {
-        String key = user.getId() != null ? user.getId() : db.child("users").push().getKey();
-        user.setId(key);
-
-        db.child("users").child(key).setValue(user)
-            .addOnSuccessListener(aVoid -> callback.onSuccess())
-            .addOnFailureListener(e -> callback.onFailure(e));
+    public void saveUser(String userId, User user, SimpleCallback callback) {
+        db.child("users").child(userId).setValue(user)
+                .addOnSuccessListener(aVoid -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(e));
     }
-
 
     // --- Events ---
     public void getEvent(String eventId, GetEventCallback callback) {
