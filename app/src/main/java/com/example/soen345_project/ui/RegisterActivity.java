@@ -11,6 +11,7 @@ import com.example.soen345_project.api.AuthController;
 import com.example.soen345_project.data.FirebaseRepository;
 import com.example.soen345_project.domain.models.User;
 import com.example.soen345_project.domain.services.AuthService;
+import com.google.firebase.auth.FirebaseAuth;
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -22,7 +23,8 @@ public class RegisterActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
 
-        authController = new AuthController(new AuthService(new FirebaseRepository()));
+        authController = new AuthController(
+                new AuthService(FirebaseAuth.getInstance(), new FirebaseRepository()));
 
         etName     = findViewById(R.id.etRegisterName);
         etEmail    = findViewById(R.id.etRegisterEmail);
