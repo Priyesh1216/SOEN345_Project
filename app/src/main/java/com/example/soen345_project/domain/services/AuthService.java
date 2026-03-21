@@ -16,12 +16,16 @@ public class AuthService {
     private final FirebaseAuth firebaseAuth;
     private final FirebaseRepository repository;
 
-    public AuthService(FirebaseRepository repository) {
-        this.firebaseAuth = FirebaseAuth.getInstance();
+    public AuthService(FirebaseAuth firebaseAuth, FirebaseRepository repository) {
+        this.firebaseAuth = firebaseAuth;
         this.repository = repository;
     }
 
     public void registerEmail(String email, String password, String name, AuthCallback callback) {
+        if (email.isEmpty() || password.isEmpty() || name.isEmpty()) {
+            callback.onFailure(new Exception("Fields cannot be empty"));
+            return;
+        }
         firebaseAuth.createUserWithEmailAndPassword(email, password)
                 .addOnSuccessListener(result -> {
                     FirebaseUser firebaseUser = result.getUser();
@@ -43,6 +47,10 @@ public class AuthService {
     }
 
     public void registerPhone(String phoneNum, String name, Activity activity, AuthCallback callback) {
+        if (phoneNum.isEmpty() || name.isEmpty()) {
+            callback.onFailure(new Exception("Fields cannot be empty"));
+            return;
+        }
         PhoneAuthOptions options = PhoneAuthOptions.newBuilder(firebaseAuth)
                 .setPhoneNumber(phoneNum)
                 .setTimeout(60L, TimeUnit.SECONDS)
@@ -79,6 +87,10 @@ public class AuthService {
     }
 
     public void signInEmail(String email, String password, AuthCallback callback) {
+        if (email.isEmpty() || password.isEmpty()) {
+            callback.onFailure(new Exception("Fields cannot be empty"));
+            return;
+        }
         firebaseAuth.signInWithEmailAndPassword(email, password)
                 .addOnSuccessListener(result -> {
                     FirebaseUser firebaseUser = result.getUser();
@@ -95,6 +107,10 @@ public class AuthService {
     }
 
     public void signInPhone(String phoneNum, Activity activity, AuthCallback callback) {
+        if (phoneNum.isEmpty()) {
+            callback.onFailure(new Exception("Phone number cannot be empty"));
+            return;
+        }
         PhoneAuthOptions options = PhoneAuthOptions.newBuilder(firebaseAuth)
                 .setPhoneNumber(phoneNum)
                 .setTimeout(60L, TimeUnit.SECONDS)
