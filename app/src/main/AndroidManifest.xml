@@ -35,6 +35,8 @@
         <activity android:name=".ui.AdminManagementActivity" />
         <activity android:name=".ui.ViewReservationsActivity" />
 
+        <activity android:name=".ui.AddEditEventActivity" />
+
     </application>
 
 </manifest>
