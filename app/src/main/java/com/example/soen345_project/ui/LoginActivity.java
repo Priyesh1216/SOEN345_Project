@@ -59,8 +59,7 @@ public class LoginActivity extends AppCompatActivity {
             authController.signInWithEmail(email, password, new AuthService.AuthCallback() {
                 @Override
                 public void onSuccess(User user) {
-                    startActivity(new Intent(LoginActivity.this, EventListActivity.class));
-                    finish();
+                    navigateBasedOnRole(user);
                 }
                 @Override
                 public void onFailure(Exception e) {
@@ -71,8 +70,7 @@ public class LoginActivity extends AppCompatActivity {
             authController.signInWithPhone(phone, LoginActivity.this, new AuthService.AuthCallback() {
                 @Override
                 public void onSuccess(User user) {
-                    startActivity(new Intent(LoginActivity.this, EventListActivity.class));
-                    finish();
+                    navigateBasedOnRole(user);
                 }
                 @Override
                 public void onFailure(Exception e) {
@@ -80,5 +78,14 @@ public class LoginActivity extends AppCompatActivity {
                 }
             });
         }
+    }
+
+    private void navigateBasedOnRole(User user) {
+        if (user.getIsAdmin()) {
+            startActivity(new Intent(LoginActivity.this, AdminManagementActivity.class));
+        } else {
+            startActivity(new Intent(LoginActivity.this, EventListActivity.class));
+        }
+        finish();
     }
 }
