@@ -23,6 +23,22 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
+      - name: Create mock google-services.json
+        run: |
+          echo '{
+            "project_info": { "project_number": "123456789012", "project_id": "dummy" },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:123456789012:android:1234567",
+                  "android_client_info": { "package_name": "com.example.soen345_project" }
+                },
+                "api_key": [ { "current_key": "dummy_api_key" } ]
+              }
+            ],
+            "configuration_version": "1"
+          }' > app/google-services.json
+
       - name: Run testDebugUnitTest
         run: ./gradlew testDebugUnitTest
 
