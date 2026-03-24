@@ -30,23 +30,16 @@ public class EventServiceTest {
     @RunWith(org.junit.runners.Parameterized.class)
     public static class AddEventTest {
 
-        @org.junit.runners.Parameterized.Parameter(0)
-        public String adminId;
-        @org.junit.runners.Parameterized.Parameter(1)
-        public String title;
-        @org.junit.runners.Parameterized.Parameter(2)
-        public String location;
-        @org.junit.runners.Parameterized.Parameter(3)
-        public String category;
-        @org.junit.runners.Parameterized.Parameter(4)
-        public int seats;
-        @org.junit.runners.Parameterized.Parameter(5)
-        public boolean shouldFail;
+        @org.junit.runners.Parameterized.Parameter(0) public String adminId;
+        @org.junit.runners.Parameterized.Parameter(1) public String title;
+        @org.junit.runners.Parameterized.Parameter(2) public String location;
+        @org.junit.runners.Parameterized.Parameter(3) public String category;
+        @org.junit.runners.Parameterized.Parameter(4) public int seats;
+        @org.junit.runners.Parameterized.Parameter(5) public boolean shouldFail;
 
         @org.junit.runners.Parameterized.Parameters(name = "{index}: adminId={0} title={1} location={2} category={3} seats={4}")
         public static java.util.Collection<Object[]> data() {
             return java.util.Arrays.asList(new Object[][]{
-                    // invalid cases
                     { null,      "Comedy Show", "Montreal", "Comedy", 100,  true  },
                     { "",        "Comedy Show", "Montreal", "Comedy", 100,  true  },
                     { "adminId", null,          "Montreal", "Comedy", 100,  true  },
@@ -82,27 +75,30 @@ public class EventServiceTest {
                 verify(mockRepository).saveEvent(eq(event), any());
             }
         }
+
+        @Test
+        public void addEvent_nullEvent_fail() {
+            eventService.addEvent("adminId", null, mockEventCallback);
+            verify(mockEventCallback).onFailure(any(Exception.class));
+        }
     }
 
     // Edit Event
     @RunWith(org.junit.runners.Parameterized.class)
     public static class EditEventTest {
 
-        @org.junit.runners.Parameterized.Parameter(0)
-        public String adminId;
-        @org.junit.runners.Parameterized.Parameter(1)
-        public String title;
-        @org.junit.runners.Parameterized.Parameter(2)
-        public boolean shouldFail;
+        @org.junit.runners.Parameterized.Parameter(0) public String adminId;
+        @org.junit.runners.Parameterized.Parameter(1) public String title;
+        @org.junit.runners.Parameterized.Parameter(2) public boolean shouldFail;
 
         @org.junit.runners.Parameterized.Parameters(name = "{index}: adminId={0} title={1}")
         public static java.util.Collection<Object[]> data() {
             return java.util.Arrays.asList(new Object[][]{
-                    { null,      "Concert", true  },
-                    { "",        "Concert", true  },
-                    { "adminId", null,      true  },
-                    { "adminId", "",        true  },
-                    { "adminId", "Concert", false },
+                    { null,      "Comedy Show", true  },
+                    { "",        "Comedy Show", true  },
+                    { "adminId", null,          true  },
+                    { "adminId", "",            true  },
+                    { "adminId", "Comedy Show", false },
             });
         }
 
@@ -127,18 +123,21 @@ public class EventServiceTest {
                 verify(mockRepository).saveEvent(eq(event), any());
             }
         }
+
+        @Test
+        public void editEvent_nullEvent_fail() {
+            eventService.editEvent("adminId", null, mockEventCallback);
+            verify(mockEventCallback).onFailure(any(Exception.class));
+        }
     }
 
     // Cancel Event
     @RunWith(org.junit.runners.Parameterized.class)
     public static class CancelEventTest {
 
-        @org.junit.runners.Parameterized.Parameter(0)
-        public String adminId;
-        @org.junit.runners.Parameterized.Parameter(1)
-        public String eventId;
-        @org.junit.runners.Parameterized.Parameter(2)
-        public boolean shouldFail;
+        @org.junit.runners.Parameterized.Parameter(0) public String adminId;
+        @org.junit.runners.Parameterized.Parameter(1) public String eventId;
+        @org.junit.runners.Parameterized.Parameter(2) public boolean shouldFail;
 
         @org.junit.runners.Parameterized.Parameters(name = "{index}: adminId={0} eventId={1}")
         public static java.util.Collection<Object[]> data() {
@@ -177,11 +176,8 @@ public class EventServiceTest {
     @RunWith(MockitoJUnitRunner.class)
     public static class ListSearchEventTest {
 
-        @Mock
-        private FirebaseRepository mockRepository;
-
-        @Mock
-        private EventService.EventListCallback mockEventListCallback;
+        @Mock private FirebaseRepository mockRepository;
+        @Mock private EventService.EventListCallback mockEventListCallback;
 
         private EventService eventService;
 
