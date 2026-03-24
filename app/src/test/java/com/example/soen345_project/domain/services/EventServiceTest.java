@@ -126,6 +126,13 @@ public class EventServiceTest {
         }
 
         @Test
+        public void editEvent_nullTitle_fail() {
+            Event event = new Event(null, new Date(), "Montreal", "Comedy", 100);
+            eventService.editEvent("adminId", event, mockEventCallback);
+            verify(mockEventCallback).onFailure(any(Exception.class));
+        }
+
+        @Test
         public void editEvent_nullEvent_fail() {
             eventService.editEvent("adminId", null, mockEventCallback);
             verify(mockEventCallback).onFailure(any(Exception.class));
