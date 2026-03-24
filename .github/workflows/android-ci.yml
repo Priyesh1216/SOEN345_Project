@@ -33,8 +33,14 @@ jobs:
       - name: Run Android Lint
         run: ./gradlew lint
 
-      - name: Run Unit Tests
-        run: ./gradlew test
+      - name: Run Unit Tests with Coverage
+        run: ./gradlew testDebugUnitTest jacocoTestReport
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
 
       - name: Build Debug APK
         run: ./gradlew assembleDebug
