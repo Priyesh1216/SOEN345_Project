@@ -1,0 +1,3 @@
+ignore:
+  - "app/src/main/java/com/example/soen345_project/ui/**"
+  - "app/src/main/java/com/example/soen345_project/api/**"

@@ -1,0 +1,53 @@
+name: Coverage
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Create mock google-services.json
+        run: |
+          echo '{
+            "project_info": { "project_number": "123456789012", "project_id": "dummy" },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:123456789012:android:1234567",
+                  "android_client_info": { "package_name": "com.example.soen345_project" }
+                },
+                "api_key": [ { "current_key": "dummy_api_key" } ]
+              }
+            ],
+            "configuration_version": "1"
+          }' > app/google-services.json
+
+      - name: Run testDebugUnitTest
+        run: ./gradlew testDebugUnitTest
+
+      - name: Generate JaCoCo XML report
+        run: ./gradlew jacocoTestReport
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
