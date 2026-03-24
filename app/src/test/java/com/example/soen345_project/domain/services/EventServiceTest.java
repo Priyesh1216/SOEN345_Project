@@ -1,7 +1,6 @@
 package com.example.soen345_project.domain.services;
 
 import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
 
 import com.example.soen345_project.data.FirebaseRepository;
 import com.example.soen345_project.domain.models.Event;
@@ -9,160 +8,207 @@ import com.example.soen345_project.domain.models.Event;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(Suite.class)
+@Suite.SuiteClasses({
+        EventServiceTest.AddEventTest.class,
+        EventServiceTest.EditEventTest.class,
+        EventServiceTest.CancelEventTest.class,
+        EventServiceTest.ListSearchEventTest.class
+})
 public class EventServiceTest {
 
-    @Mock
-    private FirebaseRepository mockRepository;
+    // Add Event
+    @RunWith(org.junit.runners.Parameterized.class)
+    public static class AddEventTest {
 
-    @Mock
-    private EventService.EventCallback mockEventCallback;
+        @org.junit.runners.Parameterized.Parameter(0)
+        public String adminId;
+        @org.junit.runners.Parameterized.Parameter(1)
+        public String title;
+        @org.junit.runners.Parameterized.Parameter(2)
+        public String location;
+        @org.junit.runners.Parameterized.Parameter(3)
+        public String category;
+        @org.junit.runners.Parameterized.Parameter(4)
+        public int seats;
+        @org.junit.runners.Parameterized.Parameter(5)
+        public boolean shouldFail;
 
-    @Mock
-    private EventService.EventListCallback mockEventListCallback;
+        @org.junit.runners.Parameterized.Parameters(name = "{index}: adminId={0} title={1} location={2} category={3} seats={4}")
+        public static java.util.Collection<Object[]> data() {
+            return java.util.Arrays.asList(new Object[][]{
+                    // invalid cases
+                    { null,      "Comedy Show", "Montreal", "Comedy", 100,  true  },
+                    { "",        "Comedy Show", "Montreal", "Comedy", 100,  true  },
+                    { "adminId", null,          "Montreal", "Comedy", 100,  true  },
+                    { "adminId", "",            "Montreal", "Comedy", 100,  true  },
+                    { "adminId", "Comedy Show", null,       "Comedy", 100,  true  },
+                    { "adminId", "Comedy Show", "",         "Comedy", 100,  true  },
+                    { "adminId", "Comedy Show", "Montreal", null,     100,  true  },
+                    { "adminId", "Comedy Show", "Montreal", "",       100,  true  },
+                    { "adminId", "Comedy Show", "Montreal", "Comedy", 0,    true  },
+                    { "adminId", "Comedy Show", "Montreal", "Comedy", -1,   true  },
+                    { "adminId", "Comedy Show", "Montreal", "Comedy", 100,  false },
+            });
+        }
 
-    private EventService eventService;
+        private FirebaseRepository mockRepository;
+        private EventService.EventCallback mockEventCallback;
+        private EventService eventService;
 
-    @Before
-    public void setUp() {
-        MockitoAnnotations.openMocks(this);
-        eventService = new EventService(mockRepository);
+        @Before
+        public void setUp() {
+            mockRepository = mock(FirebaseRepository.class);
+            mockEventCallback = mock(EventService.EventCallback.class);
+            eventService = new EventService(mockRepository);
+        }
+
+        @Test
+        public void addEvent_test() {
+            Event event = new Event(title, new Date(), location, category, seats);
+            eventService.addEvent(adminId, event, mockEventCallback);
+            if (shouldFail) {
+                verify(mockEventCallback).onFailure(any(Exception.class));
+            } else {
+                verify(mockRepository).saveEvent(eq(event), any());
+            }
+        }
     }
 
-    // addEvent
-    @Test
-    public void addEvent_emptyAdminId_fail() {
-        Event event = new Event("Concert", new Date(), "Montreal", "Music", 100);
-        eventService.addEvent("", event, mockEventCallback);
-        verify(mockEventCallback).onFailure(any(Exception.class));
+    // Edit Event
+    @RunWith(org.junit.runners.Parameterized.class)
+    public static class EditEventTest {
+
+        @org.junit.runners.Parameterized.Parameter(0)
+        public String adminId;
+        @org.junit.runners.Parameterized.Parameter(1)
+        public String title;
+        @org.junit.runners.Parameterized.Parameter(2)
+        public boolean shouldFail;
+
+        @org.junit.runners.Parameterized.Parameters(name = "{index}: adminId={0} title={1}")
+        public static java.util.Collection<Object[]> data() {
+            return java.util.Arrays.asList(new Object[][]{
+                    { null,      "Concert", true  },
+                    { "",        "Concert", true  },
+                    { "adminId", null,      true  },
+                    { "adminId", "",        true  },
+                    { "adminId", "Concert", false },
+            });
+        }
+
+        private FirebaseRepository mockRepository;
+        private EventService.EventCallback mockEventCallback;
+        private EventService eventService;
+
+        @Before
+        public void setUp() {
+            mockRepository = mock(FirebaseRepository.class);
+            mockEventCallback = mock(EventService.EventCallback.class);
+            eventService = new EventService(mockRepository);
+        }
+
+        @Test
+        public void editEvent_test() {
+            Event event = title != null ? new Event(title, new Date(), "Montreal", "Comedy", 100) : null;
+            eventService.editEvent(adminId, event, mockEventCallback);
+            if (shouldFail) {
+                verify(mockEventCallback).onFailure(any(Exception.class));
+            } else {
+                verify(mockRepository).saveEvent(eq(event), any());
+            }
+        }
     }
 
-    @Test
-    public void addEvent_nullEvent_fail() {
-        eventService.addEvent("adminId", null, mockEventCallback);
-        verify(mockEventCallback).onFailure(any(Exception.class));
+    // Cancel Event
+    @RunWith(org.junit.runners.Parameterized.class)
+    public static class CancelEventTest {
+
+        @org.junit.runners.Parameterized.Parameter(0)
+        public String adminId;
+        @org.junit.runners.Parameterized.Parameter(1)
+        public String eventId;
+        @org.junit.runners.Parameterized.Parameter(2)
+        public boolean shouldFail;
+
+        @org.junit.runners.Parameterized.Parameters(name = "{index}: adminId={0} eventId={1}")
+        public static java.util.Collection<Object[]> data() {
+            return java.util.Arrays.asList(new Object[][]{
+                    { null,      "eventId", true  },
+                    { "",        "eventId", true  },
+                    { "adminId", null,      true  },
+                    { "adminId", "",        true  },
+                    { "adminId", "eventId", false },
+            });
+        }
+
+        private FirebaseRepository mockRepository;
+        private EventService.EventCallback mockEventCallback;
+        private EventService eventService;
+
+        @Before
+        public void setUp() {
+            mockRepository = mock(FirebaseRepository.class);
+            mockEventCallback = mock(EventService.EventCallback.class);
+            eventService = new EventService(mockRepository);
+        }
+
+        @Test
+        public void cancelEvent_test() {
+            eventService.cancelEvent(adminId, eventId, mockEventCallback);
+            if (shouldFail) {
+                verify(mockEventCallback).onFailure(any(Exception.class));
+            } else {
+                verify(mockRepository).getEvent(eq(eventId), any());
+            }
+        }
     }
 
-    @Test
-    public void addEvent_emptyTitle_fail() {
-        Event event = new Event("", new Date(), "Montreal", "Music", 100);
-        eventService.addEvent("adminId", event, mockEventCallback);
-        verify(mockEventCallback).onFailure(any(Exception.class));
-    }
+    // List & Search Events
+    @RunWith(MockitoJUnitRunner.class)
+    public static class ListSearchEventTest {
 
-    @Test
-    public void addEvent_emptyLocation_fail() {
-        Event event = new Event("Concert", new Date(), "", "Music", 100);
-        eventService.addEvent("adminId", event, mockEventCallback);
-        verify(mockEventCallback).onFailure(any(Exception.class));
-    }
+        @Mock
+        private FirebaseRepository mockRepository;
 
-    @Test
-    public void addEvent_emptyCategory_fail() {
-        Event event = new Event("Concert", new Date(), "Montreal", "", 100);
-        eventService.addEvent("adminId", event, mockEventCallback);
-        verify(mockEventCallback).onFailure(any(Exception.class));
-    }
+        @Mock
+        private EventService.EventListCallback mockEventListCallback;
 
-    @Test
-    public void addEvent_zeroSeats_fail() {
-        Event event = new Event("Concert", new Date(), "Montreal", "Music", 0);
-        eventService.addEvent("adminId", event, mockEventCallback);
-        verify(mockEventCallback).onFailure(any(Exception.class));
-    }
+        private EventService eventService;
 
-    @Test
-    public void addEvent_negativeSeats_fail() {
-        Event event = new Event("Concert", new Date(), "Montreal", "Music", -1);
-        eventService.addEvent("adminId", event, mockEventCallback);
-        verify(mockEventCallback).onFailure(any(Exception.class));
-    }
+        @Before
+        public void setUp() {
+            MockitoAnnotations.openMocks(this);
+            eventService = new EventService(mockRepository);
+        }
 
-    @Test
-    public void addEvent_validEvent_callRepository() {
-        Event event = new Event("Concert", new Date(), "Montreal", "Music", 100);
-        eventService.addEvent("adminId", event, mockEventCallback);
-        verify(mockRepository).saveEvent(eq(event), any());
-    }
+        @Test
+        public void listEvents_callRepository() {
+            eventService.listEvents(mockEventListCallback);
+            verify(mockRepository).getFilteredEvents(eq(null), any());
+        }
 
-    // editEvent
-    @Test
-    public void editEvent_emptyAdminId_fail() {
-        Event event = new Event("Concert", new Date(), "Montreal", "Music", 100);
-        eventService.editEvent("", event, mockEventCallback);
-        verify(mockEventCallback).onFailure(any(Exception.class));
-    }
+        @Test
+        public void searchEvents_nullFilters_callRepository() {
+            eventService.searchEvents(null, mockEventListCallback);
+            verify(mockRepository).getFilteredEvents(eq(null), any());
+        }
 
-    @Test
-    public void editEvent_nullEvent_fail() {
-        eventService.editEvent("adminId", null, mockEventCallback);
-        verify(mockEventCallback).onFailure(any(Exception.class));
-    }
-
-    @Test
-    public void editEvent_emptyTitle_fail() {
-        Event event = new Event("", new Date(), "Montreal", "Music", 100);
-        eventService.editEvent("adminId", event, mockEventCallback);
-        verify(mockEventCallback).onFailure(any(Exception.class));
-    }
-
-    @Test
-    public void editEvent_validEvent_callRepository() {
-        Event event = new Event("Concert", new Date(), "Montreal", "Music", 100);
-        eventService.editEvent("adminId", event, mockEventCallback);
-        verify(mockRepository).saveEvent(eq(event), any());
-    }
-
-    // cancelEvent
-    @Test
-    public void cancelEvent_emptyAdminId_fail() {
-        eventService.cancelEvent("", "eventId", mockEventCallback);
-        verify(mockEventCallback).onFailure(any(Exception.class));
-    }
-
-    @Test
-    public void cancelEvent_emptyEventId_fail() {
-        eventService.cancelEvent("adminId", "", mockEventCallback);
-        verify(mockEventCallback).onFailure(any(Exception.class));
-    }
-
-    @Test
-    public void cancelEvent_validIds_callRepository() {
-        eventService.cancelEvent("adminId", "eventId", mockEventCallback);
-        verify(mockRepository).getEvent(eq("eventId"), any());
-    }
-
-    @Test
-    public void cancelEvent_validIds_fetchEvent() {
-        eventService.cancelEvent("adminId", "eventId123", mockEventCallback);
-        verify(mockRepository).getEvent(eq("eventId123"), any());
-    }
-
-    // listEvents
-    @Test
-    public void listEvents_callRepository() {
-        eventService.listEvents(mockEventListCallback);
-        verify(mockRepository).getFilteredEvents(eq(null), any());
-    }
-
-    // searchEvents
-    @Test
-    public void searchEvents_nullFilters_callRepository() {
-        eventService.searchEvents(null, mockEventListCallback);
-        verify(mockRepository).getFilteredEvents(eq(null), any());
-    }
-
-    @Test
-    public void searchEvents_withFilters_callRepository() {
-        java.util.Map<String, String> filters = new java.util.HashMap<>();
-        filters.put("category", "Music");
-        eventService.searchEvents(filters, mockEventListCallback);
-        verify(mockRepository).getFilteredEvents(eq(filters), any());
+        @Test
+        public void searchEvents_withFilters_callRepository() {
+            Map<String, String> filters = new HashMap<>();
+            filters.put("category", "Comedy");
+            eventService.searchEvents(filters, mockEventListCallback);
+            verify(mockRepository).getFilteredEvents(eq(filters), any());
+        }
     }
 }
