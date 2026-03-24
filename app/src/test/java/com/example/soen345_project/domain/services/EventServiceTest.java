@@ -163,6 +163,16 @@ public class EventServiceTest {
         }
 
         @Test
+        public void cancelEvent_test() {
+            eventService.cancelEvent(adminId, eventId, mockEventCallback);
+            if (shouldFail) {
+                verify(mockEventCallback).onFailure(any(Exception.class));
+            } else {
+                verify(mockRepository).getEvent(eq(eventId), any());
+            }
+        }
+
+        @Test
         public void cancelEvent_onFailure_callsCallback() {
             Exception mockException = new Exception("Event not found");
             doAnswer(invocation -> {
@@ -186,6 +196,19 @@ public class EventServiceTest {
 
             eventService.cancelEvent("adminId", "eventId", mockEventCallback);
             verify(mockEvent).cancelEvent();
+        }
+
+        @Test
+        public void cancelEvent_onSuccess_savesEvent() {
+            Event mockEvent = mock(Event.class);
+            doAnswer(invocation -> {
+                FirebaseRepository.GetEventCallback callback = invocation.getArgument(1);
+                callback.onSuccess(mockEvent);
+                return null;
+            }).when(mockRepository).getEvent(eq("eventId"), any());
+
+            eventService.cancelEvent("adminId", "eventId", mockEventCallback);
+            verify(mockRepository).saveEvent(eq(mockEvent), any());
         }
     }
 
