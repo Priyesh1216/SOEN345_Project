@@ -5,6 +5,10 @@ import static org.mockito.Mockito.*;
 import com.example.soen345_project.data.FirebaseRepository;
 import com.example.soen345_project.domain.models.Event;
 
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,10 +16,7 @@ import org.junit.runners.Suite;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
-
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import org.mockito.stubbing.Answer;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
@@ -169,6 +170,19 @@ public class EventServiceTest {
             } else {
                 verify(mockRepository).getEvent(eq(eventId), any());
             }
+        }
+
+        @Test
+        public void cancelEvent_onSuccess_cancelsEvent() {
+            Event mockEvent = mock(Event.class);
+            doAnswer(invocation -> {
+                FirebaseRepository.GetEventCallback callback = invocation.getArgument(1);
+                callback.onSuccess(mockEvent);
+                return null;
+            }).when(mockRepository).getEvent(eq("eventId"), any());
+
+            eventService.cancelEvent("adminId", "eventId", mockEventCallback);
+            verify(mockEvent).cancelEvent();
         }
     }
 
