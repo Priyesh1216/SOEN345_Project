@@ -44,16 +44,25 @@ public class EventService {
             callback.onFailure(new Exception("Event seats must be greater than 0"));
             return;
         }
+
+        if (event.getCategory() == null || event.getCategory().isEmpty()) {
+            callback.onFailure(new Exception("Event category cannot be empty"));
+            return;
+        }
         repository.saveEvent(event, callback);
     }
 
     public void editEvent(String adminId, Event event, EventCallback callback) {
         if (adminId == null || adminId.isEmpty()) {
-            callback.onFailure(new Exception("Admin ID can't be empty"));
+            callback.onFailure(new Exception("Admin ID cannot be empty"));
             return;
         }
         if (event == null) {
-            callback.onFailure(new Exception("Event can't be null"));
+            callback.onFailure(new Exception("Event cannot be null"));
+            return;
+        }
+        if (event.getTitle() == null || event.getTitle().isEmpty()) {
+            callback.onFailure(new Exception("Event title cannot be empty"));
             return;
         }
         repository.saveEvent(event, callback);

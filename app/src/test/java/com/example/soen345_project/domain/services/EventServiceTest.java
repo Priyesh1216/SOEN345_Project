@@ -13,9 +13,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EventServiceTest {
@@ -46,7 +44,7 @@ public class EventServiceTest {
     }
 
     @Test
-    public void addEvent_nullEvent_shouldFail() {
+    public void addEvent_nullEvent_fail() {
         eventService.addEvent("adminId", null, mockEventCallback);
         verify(mockEventCallback).onFailure(any(Exception.class));
     }
@@ -66,8 +64,22 @@ public class EventServiceTest {
     }
 
     @Test
+    public void addEvent_emptyCategory_fail() {
+        Event event = new Event("Concert", new Date(), "Montreal", "", 100);
+        eventService.addEvent("adminId", event, mockEventCallback);
+        verify(mockEventCallback).onFailure(any(Exception.class));
+    }
+
+    @Test
     public void addEvent_zeroSeats_fail() {
         Event event = new Event("Concert", new Date(), "Montreal", "Music", 0);
+        eventService.addEvent("adminId", event, mockEventCallback);
+        verify(mockEventCallback).onFailure(any(Exception.class));
+    }
+
+    @Test
+    public void addEvent_negativeSeats_fail() {
+        Event event = new Event("Concert", new Date(), "Montreal", "Music", -1);
         eventService.addEvent("adminId", event, mockEventCallback);
         verify(mockEventCallback).onFailure(any(Exception.class));
     }
@@ -90,6 +102,13 @@ public class EventServiceTest {
     @Test
     public void editEvent_nullEvent_fail() {
         eventService.editEvent("adminId", null, mockEventCallback);
+        verify(mockEventCallback).onFailure(any(Exception.class));
+    }
+
+    @Test
+    public void editEvent_emptyTitle_fail() {
+        Event event = new Event("", new Date(), "Montreal", "Music", 100);
+        eventService.editEvent("adminId", event, mockEventCallback);
         verify(mockEventCallback).onFailure(any(Exception.class));
     }
 
@@ -119,6 +138,12 @@ public class EventServiceTest {
         verify(mockRepository).getEvent(eq("eventId"), any());
     }
 
+    @Test
+    public void cancelEvent_validIds_fetchEvent() {
+        eventService.cancelEvent("adminId", "eventId123", mockEventCallback);
+        verify(mockRepository).getEvent(eq("eventId123"), any());
+    }
+
     // listEvents
     @Test
     public void listEvents_callRepository() {
@@ -131,5 +156,13 @@ public class EventServiceTest {
     public void searchEvents_nullFilters_callRepository() {
         eventService.searchEvents(null, mockEventListCallback);
         verify(mockRepository).getFilteredEvents(eq(null), any());
+    }
+
+    @Test
+    public void searchEvents_withFilters_callRepository() {
+        java.util.Map<String, String> filters = new java.util.HashMap<>();
+        filters.put("category", "Music");
+        eventService.searchEvents(filters, mockEventListCallback);
+        verify(mockRepository).getFilteredEvents(eq(filters), any());
     }
 }
