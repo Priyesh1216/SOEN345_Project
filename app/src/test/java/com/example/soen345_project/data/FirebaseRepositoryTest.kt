@@ -131,4 +131,165 @@ class FirebaseRepositoryTest {
 
         assertEquals(0, returnedList!!.size)
     }
+
+    @Test
+    fun getFilteredEvents_categoryFilter_filtersSuccessfully() {
+        val repository = FirebaseRepository()
+        val mockSnapshot = mock(DataSnapshot::class.java)
+        val mockChild1 = mock(DataSnapshot::class.java)
+        val mockChild2 = mock(DataSnapshot::class.java)
+        
+        val ev1 = Event("Rock Concert", Date(), "Montreal", "Music", 100)
+        val ev2 = Event("Tech Talk", Date(), "Toronto", "Technology", 100)
+        
+        `when`(mockChild1.getValue(Event::class.java)).thenReturn(ev1)
+        `when`(mockChild1.key).thenReturn("ev1")
+        `when`(mockChild2.getValue(Event::class.java)).thenReturn(ev2)
+        `when`(mockChild2.key).thenReturn("ev2")
+        
+        `when`(mockSnapshot.children).thenReturn(listOf(mockChild1, mockChild2))
+        
+        val filters = mutableMapOf<String, String>()
+        filters["category"] = "music"
+        
+        var returnedList: List<Event>? = null
+        repository.getFilteredEvents(filters, object : EventService.EventListCallback {
+            override fun onSuccess(events: List<Event>) { returnedList = events }
+            override fun onFailure(e: Exception) {}
+        })
+        
+        val captor = ArgumentCaptor.forClass(ValueEventListener::class.java)
+        verify(mockEventsReference).addListenerForSingleValueEvent(captor.capture())
+        captor.value.onDataChange(mockSnapshot)
+        
+        assertEquals(1, returnedList!!.size)
+        assertEquals("ev1", returnedList!![0].id)
+    }
+
+    @Test
+    fun getFilteredEvents_locationFilter_filtersSuccessfully() {
+        val repository = FirebaseRepository()
+        val mockSnapshot = mock(DataSnapshot::class.java)
+        val mockChild1 = mock(DataSnapshot::class.java)
+        val mockChild2 = mock(DataSnapshot::class.java)
+        
+        val ev1 = Event("Rock Concert", Date(), "Montreal", "Music", 100)
+        val ev2 = Event("Tech Talk", Date(), "Toronto", "Technology", 100)
+        
+        `when`(mockChild1.getValue(Event::class.java)).thenReturn(ev1)
+        `when`(mockChild1.key).thenReturn("ev1")
+        `when`(mockChild2.getValue(Event::class.java)).thenReturn(ev2)
+        `when`(mockChild2.key).thenReturn("ev2")
+        
+        `when`(mockSnapshot.children).thenReturn(listOf(mockChild1, mockChild2))
+        
+        val filters = mutableMapOf<String, String>()
+        filters["location"] = "toronto"
+        
+        var returnedList: List<Event>? = null
+        repository.getFilteredEvents(filters, object : EventService.EventListCallback {
+            override fun onSuccess(events: List<Event>) { returnedList = events }
+            override fun onFailure(e: Exception) {}
+        })
+        
+        val captor = ArgumentCaptor.forClass(ValueEventListener::class.java)
+        verify(mockEventsReference).addListenerForSingleValueEvent(captor.capture())
+        captor.value.onDataChange(mockSnapshot)
+        
+        assertEquals(1, returnedList!!.size)
+        assertEquals("ev2", returnedList!![0].id)
+    }
+
+    @Test
+    fun getFilteredEvents_dateFilters_filtersSuccessfully() {
+        val repository = FirebaseRepository()
+        val mockSnapshot = mock(DataSnapshot::class.java)
+        val mockChild1 = mock(DataSnapshot::class.java)
+        val mockChild2 = mock(DataSnapshot::class.java)
+        
+        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+        val date1 = sdf.parse("2026-03-20")
+        val date2 = sdf.parse("2026-03-30")
+        
+        val ev1 = Event("Concert 1", date1, "Montreal", "Music", 100)
+        val ev2 = Event("Concert 2", date2, "Montreal", "Music", 100)
+        
+        `when`(mockChild1.getValue(Event::class.java)).thenReturn(ev1)
+        `when`(mockChild1.key).thenReturn("ev1")
+        `when`(mockChild2.getValue(Event::class.java)).thenReturn(ev2)
+        `when`(mockChild2.key).thenReturn("ev2")
+        
+        `when`(mockSnapshot.children).thenReturn(listOf(mockChild1, mockChild2))
+        
+        val filters = mutableMapOf<String, String>()
+        filters["dateFrom"] = "2026-03-25"
+        filters["dateTo"] = "2026-04-05"
+        
+        var returnedList: List<Event>? = null
+        repository.getFilteredEvents(filters, object : EventService.EventListCallback {
+            override fun onSuccess(events: List<Event>) { returnedList = events }
+            override fun onFailure(e: Exception) {}
+        })
+        
+        val captor = ArgumentCaptor.forClass(ValueEventListener::class.java)
+        verify(mockEventsReference).addListenerForSingleValueEvent(captor.capture())
+        captor.value.onDataChange(mockSnapshot)
+        
+        assertEquals(1, returnedList!!.size)
+        assertEquals("ev2", returnedList!![0].id)
+    }
+
+    @Test
+    fun getFilteredEvents_invalidDateFrom_callsFailure() {
+        val repository = FirebaseRepository()
+        val mockSnapshot = mock(DataSnapshot::class.java)
+        val mockChild1 = mock(DataSnapshot::class.java)
+        
+        val ev1 = Event("Concert 1", Date(), "Montreal", "Music", 100)
+        `when`(mockChild1.getValue(Event::class.java)).thenReturn(ev1)
+        `when`(mockChild1.key).thenReturn("ev1")
+        `when`(mockSnapshot.children).thenReturn(listOf(mockChild1))
+        
+        val filters = mutableMapOf<String, String>()
+        filters["dateFrom"] = "INVALID_DATE"
+        
+        var failureCalled = false
+        repository.getFilteredEvents(filters, object : EventService.EventListCallback {
+            override fun onSuccess(events: List<Event>) { }
+            override fun onFailure(e: Exception) { failureCalled = true }
+        })
+        
+        val captor = ArgumentCaptor.forClass(ValueEventListener::class.java)
+        verify(mockEventsReference).addListenerForSingleValueEvent(captor.capture())
+        captor.value.onDataChange(mockSnapshot)
+        
+        assertEquals(true, failureCalled)
+    }
+
+    @Test
+    fun getFilteredEvents_invalidDateTo_callsFailure() {
+        val repository = FirebaseRepository()
+        val mockSnapshot = mock(DataSnapshot::class.java)
+        val mockChild1 = mock(DataSnapshot::class.java)
+        
+        val ev1 = Event("Concert 1", Date(), "Montreal", "Music", 100)
+        `when`(mockChild1.getValue(Event::class.java)).thenReturn(ev1)
+        `when`(mockChild1.key).thenReturn("ev1")
+        `when`(mockSnapshot.children).thenReturn(listOf(mockChild1))
+        
+        val filters = mutableMapOf<String, String>()
+        filters["dateTo"] = "BAD_DATE"
+        
+        var failureCalledTo = false
+        repository.getFilteredEvents(filters, object : EventService.EventListCallback {
+            override fun onSuccess(events: List<Event>) { }
+            override fun onFailure(e: Exception) { failureCalledTo = true }
+        })
+        
+        val captor = ArgumentCaptor.forClass(ValueEventListener::class.java)
+        verify(mockEventsReference).addListenerForSingleValueEvent(captor.capture())
+        captor.value.onDataChange(mockSnapshot)
+        
+        assertEquals(true, failureCalledTo)
+    }
 }
