@@ -561,4 +561,91 @@ class FirebaseRepositoryTest {
         captor.value.onComplete(null, true, mock(DataSnapshot::class.java))
         assertEquals(true, resultConfirmed)
     }
+
+    @Test
+    fun getEvent_notExists_returnsFailure() {
+        val repository = FirebaseRepository()
+        val mockEvRef = mock(DatabaseReference::class.java)
+        `when`(mockEventsReference.child("e1")).thenReturn(mockEvRef)
+        
+        val mockSnapshot = mock(DataSnapshot::class.java)
+        `when`(mockSnapshot.exists()).thenReturn(false)
+        
+        val task = mockTask(mockSnapshot, null)
+        `when`(mockEvRef.get()).thenReturn(task)
+        
+        var failureCalled = false
+        repository.getEvent("e1", object : GetEventCallback {
+            override fun onSuccess(e: Event) {}
+            override fun onFailure(e: Exception) { failureCalled = true }
+        })
+        assertEquals(true, failureCalled)
+    }
+
+    @Test
+    fun getFilteredEvents_onCancelled() {
+        val repository = FirebaseRepository()
+        
+        var failureCalled = false
+        repository.getFilteredEvents(null, object : EventService.EventListCallback {
+            override fun onSuccess(events: List<Event>) {}
+            override fun onFailure(e: Exception) { failureCalled = true }
+        })
+        
+        val captor = ArgumentCaptor.forClass(ValueEventListener::class.java)
+        verify(mockEventsReference).addListenerForSingleValueEvent(captor.capture())
+        
+        val mockError = mock(DatabaseError::class.java)
+        `when`(mockError.toException()).thenReturn(com.google.firebase.database.DatabaseException("Database error", null))
+        captor.value.onCancelled(mockError)
+        
+        assertEquals(true, failureCalled)
+    }
+
+    @Test
+    fun getReservation_notExists_returnsFailure() {
+        val repository = FirebaseRepository()
+        val mockResvRepoRef = mock(DatabaseReference::class.java)
+        val mockResvRef = mock(DatabaseReference::class.java)
+        `when`(mockReference.child("reservations")).thenReturn(mockResvRepoRef)
+        `when`(mockResvRepoRef.child("r1")).thenReturn(mockResvRef)
+        
+        val mockSnapshot = mock(DataSnapshot::class.java)
+        `when`(mockSnapshot.exists()).thenReturn(false)
+        
+        val task = mockTask(mockSnapshot, null)
+        `when`(mockResvRef.get()).thenReturn(task)
+        
+        var failureCalled = false
+        repository.getReservation("r1", object : GetReservationCallback {
+            override fun onSuccess(r: Reservation) {}
+            override fun onFailure(e: Exception) { failureCalled = true }
+        })
+        assertEquals(true, failureCalled)
+    }
+
+    @Test
+    fun getReservationsByUser_onCancelled() {
+        val repository = FirebaseRepository()
+        val mockResvRepoRef = mock(DatabaseReference::class.java)
+        val mockQuery = mock(Query::class.java)
+        `when`(mockReference.child("reservations")).thenReturn(mockResvRepoRef)
+        `when`(mockResvRepoRef.orderByChild("userId")).thenReturn(mockQuery)
+        `when`(mockQuery.equalTo("u1")).thenReturn(mockQuery)
+        
+        var failureCalled = false
+        repository.getReservationsByUser("u1", object : ReservationService.ReservationListCallback {
+            override fun onSuccess(res: List<Reservation>) {}
+            override fun onFailure(e: Exception) { failureCalled = true }
+        })
+        
+        val captor = ArgumentCaptor.forClass(ValueEventListener::class.java)
+        verify(mockQuery).addListenerForSingleValueEvent(captor.capture())
+        
+        val mockError = mock(DatabaseError::class.java)
+        `when`(mockError.toException()).thenReturn(com.google.firebase.database.DatabaseException("Database error", null))
+        captor.value.onCancelled(mockError)
+        
+        assertEquals(true, failureCalled)
+    }
 }
