@@ -21,13 +21,28 @@
             android:textStyle="bold"
             android:textColor="#FFFFFF" />
 
-        <TextView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Manage events"
-            android:textSize="13sp"
-            android:textColor="#E0E0E0"
-            android:layout_marginTop="4dp" />
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Manage events"
+                android:textSize="13sp"
+                android:textColor="#E0E0E0"
+                android:layout_marginTop="4dp" />
+
+            <Button
+                android:id="@+id/btnAdminLogout"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Logout"
+                android:backgroundTint="#FF5252"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
 
     </LinearLayout>
 
