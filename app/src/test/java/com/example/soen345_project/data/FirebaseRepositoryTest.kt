@@ -69,7 +69,7 @@ class FirebaseRepositoryTest {
         org.mockito.Mockito.doAnswer { invocation ->
             val listener = invocation.getArgument<com.google.android.gms.tasks.OnSuccessListener<TResult>>(0)
             if (exception == null) {
-                listener.onSuccess(result!!)
+                listener.onSuccess(result as TResult)
             }
             task
         }.`when`(task).addOnSuccessListener(any())
