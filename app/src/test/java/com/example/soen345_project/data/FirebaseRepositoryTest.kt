@@ -648,4 +648,184 @@ class FirebaseRepositoryTest {
         
         assertEquals(true, failureCalled)
     }
+
+    @Test
+    fun deleteReservation_success_callsOnSuccess() {
+        val repository = FirebaseRepository()
+        val mockResRef = mock(DatabaseReference::class.java)
+        `when`(mockReference.child("reservations")).thenReturn(mockResvRepoRef)
+        `when`(mockResvRepoRef.child("res1")).thenReturn(mockResRef)
+
+        val task = mockTask(null as Void?, null)
+        `when`(mockResRef.removeValue()).thenReturn(task)
+
+        var successCalled = false
+        repository.deleteReservation("res1", object : SimpleCallback {
+            override fun onSuccess() { successCalled = true }
+            override fun onFailure(e: Exception) {}
+        })
+
+        assertEquals(true, successCalled)
+    }
+
+    @Test
+    fun deleteReservation_failure_callsOnFailure() {
+        val repository = FirebaseRepository()
+        val mockResRef = mock(DatabaseReference::class.java)
+        `when`(mockReference.child("reservations")).thenReturn(mockResvRepoRef)
+        `when`(mockResvRepoRef.child("res1")).thenReturn(mockResRef)
+
+        val task = mockTask(null as Void?, Exception("DB delete error"))
+        `when`(mockResRef.removeValue()).thenReturn(task)
+
+        var caughtMessage: String? = null
+        repository.deleteReservation("res1", object : SimpleCallback {
+            override fun onSuccess() {}
+            override fun onFailure(e: Exception) { caughtMessage = e.message }
+        })
+
+        assertEquals("DB delete error", caughtMessage)
+    }
+
+    @Test
+    fun getReservationByUserAndEvent_found_returnsReservation() {
+        val repository = FirebaseRepository()
+        val mockResvRepoRef = mock(DatabaseReference::class.java)
+        val mockQuery = mock(Query::class.java)
+        `when`(mockReference.child("reservations")).thenReturn(mockResvRepoRef)
+        `when`(mockResvRepoRef.orderByChild("userId")).thenReturn(mockQuery)
+        `when`(mockQuery.equalTo("user1")).thenReturn(mockQuery)
+
+        val res = Reservation("event1", "user1", 2)
+        res.id = "res1"
+        val mockChild = mock(DataSnapshot::class.java)
+        `when`(mockChild.getValue(Reservation::class.java)).thenReturn(res)
+        `when`(mockChild.key).thenReturn("res1")
+        val mockSnapshot = mock(DataSnapshot::class.java)
+        `when`(mockSnapshot.children).thenReturn(listOf(mockChild))
+
+        var found: Reservation? = null
+        repository.getReservationByUserAndEvent("user1", "event1", object : GetReservationCallback {
+            override fun onSuccess(r: Reservation?) { found = r }
+            override fun onFailure(e: Exception) {}
+        })
+
+        val captor = ArgumentCaptor.forClass(ValueEventListener::class.java)
+        verify(mockQuery).addListenerForSingleValueEvent(captor.capture())
+        captor.value.onDataChange(mockSnapshot)
+
+        assertEquals("res1", found?.id)
+    }
+
+    @Test
+    fun getReservationByUserAndEvent_notFound_returnsNull() {
+        val repository = FirebaseRepository()
+        val mockResvRepoRef = mock(DatabaseReference::class.java)
+        val mockQuery = mock(Query::class.java)
+        `when`(mockReference.child("reservations")).thenReturn(mockResvRepoRef)
+        `when`(mockResvRepoRef.orderByChild("userId")).thenReturn(mockQuery)
+        `when`(mockQuery.equalTo("user1")).thenReturn(mockQuery)
+
+        val mockSnapshot = mock(DataSnapshot::class.java)
+        `when`(mockSnapshot.children).thenReturn(emptyList())
+
+        var found: Reservation? = Reservation("x", "x", 1)
+        repository.getReservationByUserAndEvent("user1", "event1", object : GetReservationCallback {
+            override fun onSuccess(r: Reservation?) { found = r }
+            override fun onFailure(e: Exception) {}
+        })
+
+        val captor = ArgumentCaptor.forClass(ValueEventListener::class.java)
+        verify(mockQuery).addListenerForSingleValueEvent(captor.capture())
+        captor.value.onDataChange(mockSnapshot)
+
+        assertNull(found)
+    }
+
+    @Test
+    fun getReservationByUserAndEvent_wrongEvent_returnsNull() {
+        val repository = FirebaseRepository()
+        val mockResvRepoRef = mock(DatabaseReference::class.java)
+        val mockQuery = mock(Query::class.java)
+        `when`(mockReference.child("reservations")).thenReturn(mockResvRepoRef)
+        `when`(mockResvRepoRef.orderByChild("userId")).thenReturn(mockQuery)
+        `when`(mockQuery.equalTo("user1")).thenReturn(mockQuery)
+
+        val res = Reservation("otherEvent", "user1", 1)
+        res.id = "resX"
+        val mockChild = mock(DataSnapshot::class.java)
+        `when`(mockChild.getValue(Reservation::class.java)).thenReturn(res)
+        `when`(mockChild.key).thenReturn("resX")
+        val mockSnapshot = mock(DataSnapshot::class.java)
+        `when`(mockSnapshot.children).thenReturn(listOf(mockChild))
+
+        var found: Reservation? = Reservation("x", "x", 1)
+        repository.getReservationByUserAndEvent("user1", "event1", object : GetReservationCallback {
+            override fun onSuccess(r: Reservation?) { found = r }
+            override fun onFailure(e: Exception) {}
+        })
+
+        val captor = ArgumentCaptor.forClass(ValueEventListener::class.java)
+        verify(mockQuery).addListenerForSingleValueEvent(captor.capture())
+        captor.value.onDataChange(mockSnapshot)
+
+        assertNull(found)
+    }
+
+    @Test
+    fun getReservationByUserAndEvent_cancelledStatus_returnsNull() {
+        val repository = FirebaseRepository()
+        val mockResvRepoRef = mock(DatabaseReference::class.java)
+        val mockQuery = mock(Query::class.java)
+        `when`(mockReference.child("reservations")).thenReturn(mockResvRepoRef)
+        `when`(mockResvRepoRef.orderByChild("userId")).thenReturn(mockQuery)
+        `when`(mockQuery.equalTo("user1")).thenReturn(mockQuery)
+
+        val res = Reservation("event1", "user1", 1)
+        res.id = "res2"
+        res.cancel()
+        val mockChild = mock(DataSnapshot::class.java)
+        `when`(mockChild.getValue(Reservation::class.java)).thenReturn(res)
+        `when`(mockChild.key).thenReturn("res2")
+        val mockSnapshot = mock(DataSnapshot::class.java)
+        `when`(mockSnapshot.children).thenReturn(listOf(mockChild))
+
+        var found: Reservation? = Reservation("x", "x", 1)
+        repository.getReservationByUserAndEvent("user1", "event1", object : GetReservationCallback {
+            override fun onSuccess(r: Reservation?) { found = r }
+            override fun onFailure(e: Exception) {}
+        })
+
+        val captor = ArgumentCaptor.forClass(ValueEventListener::class.java)
+        verify(mockQuery).addListenerForSingleValueEvent(captor.capture())
+        captor.value.onDataChange(mockSnapshot)
+
+        assertNull(found)
+    }
+
+    @Test
+    fun getReservationByUserAndEvent_onCancelled_callsOnFailure() {
+        val repository = FirebaseRepository()
+        val mockResvRepoRef = mock(DatabaseReference::class.java)
+        val mockQuery = mock(Query::class.java)
+        `when`(mockReference.child("reservations")).thenReturn(mockResvRepoRef)
+        `when`(mockResvRepoRef.orderByChild("userId")).thenReturn(mockQuery)
+        `when`(mockQuery.equalTo("user1")).thenReturn(mockQuery)
+
+        var failureCalled = false
+        repository.getReservationByUserAndEvent("user1", "event1", object : GetReservationCallback {
+            override fun onSuccess(r: Reservation?) {}
+            override fun onFailure(e: Exception) { failureCalled = true }
+        })
+
+        val captor = ArgumentCaptor.forClass(ValueEventListener::class.java)
+        verify(mockQuery).addListenerForSingleValueEvent(captor.capture())
+
+        val mockError = mock(DatabaseError::class.java)
+        `when`(mockError.toException())
+            .thenReturn(com.google.firebase.database.DatabaseException("cancelled", null))
+        captor.value.onCancelled(mockError)
+
+        assertEquals(true, failureCalled)
+    }
 }
