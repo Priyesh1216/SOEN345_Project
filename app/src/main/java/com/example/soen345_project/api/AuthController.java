@@ -17,8 +17,8 @@ public class AuthController {
     }
 
     public void registerWithPhone(String phoneNum, String name, Activity activity,
-                                  AuthService.AuthCallback callback) {
-        authService.registerPhone(phoneNum, name, activity, callback);
+                                  AuthService.AuthCallback authCallback, AuthService.PhoneCodeSentCallback codeSentCallback) {
+        authService.registerPhone(phoneNum, name, activity, authCallback, codeSentCallback);
     }
 
     public void signInWithEmail(String email, String password, AuthService.AuthCallback callback) {
@@ -26,8 +26,18 @@ public class AuthController {
     }
 
     public void signInWithPhone(String phoneNum, Activity activity,
-                                AuthService.AuthCallback callback) {
-        authService.signInPhone(phoneNum, activity, callback);
+                                AuthService.AuthCallback authCallback, AuthService.PhoneCodeSentCallback codeSentCallback) {
+        authService.signInPhone(phoneNum, activity, authCallback, codeSentCallback);
+    }
+
+    public void verifyOtpAndLogin(String verificationId, String otp,
+                                  AuthService.AuthCallback callback) {
+        authService.verifyOtpAndLogin(verificationId, otp, callback);
+    }
+
+    public void verifyOtpAndRegister(String verificationId, String otp, String phoneNum,
+                                     String name, AuthService.AuthCallback callback) {
+        authService.verifyOtpAndRegister(verificationId, otp, phoneNum, name, callback);
     }
 
     public void signOut() {

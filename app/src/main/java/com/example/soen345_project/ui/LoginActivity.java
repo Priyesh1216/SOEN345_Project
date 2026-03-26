@@ -18,11 +18,16 @@ public class LoginActivity extends AppCompatActivity {
     private AuthController authController;
     private EditText etEmail, etPhone, etPassword;
 
+    private String pendingVerificationId;
+    private String pendingPhone;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
+        FirebaseAuth.getInstance().getFirebaseAuthSettings()
+                .setAppVerificationDisabledForTesting(true);
         authController = new AuthController(
                 new AuthService(FirebaseAuth.getInstance(), new FirebaseRepository()));
 
@@ -68,17 +73,68 @@ public class LoginActivity extends AppCompatActivity {
                 }
             });
         } else {
+            if (!phone.matches("^\\+[1-9]\\d{7,14}$")) {
+                Toast.makeText(this, "Use format: +15141234567", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            pendingPhone = phone;
             authController.signInWithPhone(phone, LoginActivity.this, new AuthService.AuthCallback() {
+                        @Override
+                        public void onSuccess(User user) {
+                            runOnUiThread(() -> {
+                                startActivity(new Intent(LoginActivity.this, EventListActivity.class));
+                                finish();
+                            });
+                        }
+                        @Override
+                        public void onFailure(Exception e) {
+                            runOnUiThread(() -> Toast.makeText(LoginActivity.this,
+                                    "Login failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                        }
+                    },new AuthService.PhoneCodeSentCallback() {
                 @Override
-                public void onSuccess(User user) {
-                    startActivity(new Intent(LoginActivity.this, EventListActivity.class));
-                    finish();
+                public void onCodeSent(String verificationId) {
+                    pendingVerificationId = verificationId;
+                    runOnUiThread(() -> showOtpDialog());
                 }
                 @Override
                 public void onFailure(Exception e) {
                     Toast.makeText(LoginActivity.this, "Login failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 }
-            });
+            }
+            );
         }
+    }
+    private void showOtpDialog() {
+        EditText otpInput = new EditText(this);
+        otpInput.setHint("Enter 6-digit code");
+        otpInput.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Enter verification code")
+                .setMessage("A code was sent to " + pendingPhone)
+                .setView(otpInput)
+                .setPositiveButton("Verify", (dialog, which) -> {
+                    String otp = otpInput.getText().toString().trim();
+                    if (otp.length() != 6) {
+                        Toast.makeText(this, "Enter the 6-digit code", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    authController.verifyOtpAndLogin(pendingVerificationId, otp,
+                            new AuthService.AuthCallback() {
+                                @Override
+                                public void onSuccess(User user) {
+                                    startActivity(new Intent(LoginActivity.this, EventListActivity.class));
+                                    finish();
+                                }
+                                @Override
+                                public void onFailure(Exception e) {
+                                    Toast.makeText(LoginActivity.this,
+                                            "Invalid code: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 }
