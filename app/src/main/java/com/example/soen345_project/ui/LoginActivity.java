@@ -26,8 +26,7 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        FirebaseAuth.getInstance().getFirebaseAuthSettings()
-                .setAppVerificationDisabledForTesting(true);
+
         authController = new AuthController(
                 new AuthService(FirebaseAuth.getInstance(), new FirebaseRepository()));
 
@@ -72,6 +71,10 @@ public class LoginActivity extends AppCompatActivity {
                 }
             });
         } else {
+
+            FirebaseAuth.getInstance().getFirebaseAuthSettings()
+                    .setAppVerificationDisabledForTesting(true);
+
             if (!phone.matches("^\\+[1-9]\\d{7,14}$")) {
                 Toast.makeText(this, "Use format: +15141234567", Toast.LENGTH_SHORT).show();
                 return;
@@ -80,10 +83,7 @@ public class LoginActivity extends AppCompatActivity {
             authController.signInWithPhone(phone, LoginActivity.this, new AuthService.AuthCallback() {
                         @Override
                         public void onSuccess(User user) {
-                            runOnUiThread(() -> {
-                                startActivity(new Intent(LoginActivity.this, EventListActivity.class));
-                                finish();
-                            });
+                            navigateBasedOnRole(user);
                         }
                         @Override
                         public void onFailure(Exception e) {
@@ -95,9 +95,6 @@ public class LoginActivity extends AppCompatActivity {
                 public void onCodeSent(String verificationId) {
                     pendingVerificationId = verificationId;
                     runOnUiThread(() -> showOtpDialog());
-                @Override
-                public void onSuccess(User user) {
-                    navigateBasedOnRole(user);
                 }
                 @Override
                 public void onFailure(Exception e) {
@@ -139,7 +136,6 @@ public class LoginActivity extends AppCompatActivity {
                 .setNegativeButton("Cancel", null)
                 .show();
     }
-
     private void navigateBasedOnRole(User user) {
         if (user.getIsAdmin()) {
             Intent intent = new Intent(LoginActivity.this, AdminManagementActivity.class);
