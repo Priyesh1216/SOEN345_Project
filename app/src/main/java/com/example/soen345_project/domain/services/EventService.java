@@ -24,17 +24,59 @@ public class EventService {
     }
 
     public void addEvent(String adminId, Event event, EventCallback callback) {
-        // verify admin then save
+        if (adminId == null || adminId.isEmpty()) {
+            callback.onFailure(new Exception("Admin ID can't be empty"));
+            return;
+        }
+        if (event == null) {
+            callback.onFailure(new Exception("Event can't be null"));
+            return;
+        }
+        if (event.getTitle() == null || event.getTitle().isEmpty()) {
+            callback.onFailure(new Exception("Event title can't be empty"));
+            return;
+        }
+        if (event.getLocation() == null || event.getLocation().isEmpty()) {
+            callback.onFailure(new Exception("Event location can't be empty"));
+            return;
+        }
+        if (event.getTotalSeats() <= 0) {
+            callback.onFailure(new Exception("Event seats must be greater than 0"));
+            return;
+        }
+
+        if (event.getCategory() == null || event.getCategory().isEmpty()) {
+            callback.onFailure(new Exception("Event category cannot be empty"));
+            return;
+        }
         repository.saveEvent(event, callback);
     }
 
     public void editEvent(String adminId, Event event, EventCallback callback) {
-        // verify admin then update
+        if (adminId == null || adminId.isEmpty()) {
+            callback.onFailure(new Exception("Admin ID cannot be empty"));
+            return;
+        }
+        if (event == null) {
+            callback.onFailure(new Exception("Event cannot be null"));
+            return;
+        }
+        if (event.getTitle() == null || event.getTitle().isEmpty()) {
+            callback.onFailure(new Exception("Event title cannot be empty"));
+            return;
+        }
         repository.saveEvent(event, callback);
     }
 
     public void cancelEvent(String adminId, String eventId, EventCallback callback) {
-        // fetch event, mark CANCELLED, save
+        if (adminId == null || adminId.isEmpty()) {
+            callback.onFailure(new Exception("Admin ID can't be empty"));
+            return;
+        }
+        if (eventId == null || eventId.isEmpty()) {
+            callback.onFailure(new Exception("Event ID can't be empty"));
+            return;
+        }
         repository.getEvent(eventId, new FirebaseRepository.GetEventCallback() {
             @Override
             public void onSuccess(Event event) {

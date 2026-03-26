@@ -22,4 +22,8 @@ public class AdminController {
     public void cancelEvent(String adminId, String eventId, EventService.EventCallback callback) {
         eventService.cancelEvent(adminId, eventId, callback);
     }
+
+    public void listEvents(EventService.EventListCallback callback) {
+        eventService.listEvents(callback);
+    }
 }

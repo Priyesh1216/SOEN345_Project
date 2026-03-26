@@ -64,8 +64,7 @@ public class LoginActivity extends AppCompatActivity {
             authController.signInWithEmail(email, password, new AuthService.AuthCallback() {
                 @Override
                 public void onSuccess(User user) {
-                    startActivity(new Intent(LoginActivity.this, EventListActivity.class));
-                    finish();
+                    navigateBasedOnRole(user);
                 }
                 @Override
                 public void onFailure(Exception e) {
@@ -96,6 +95,9 @@ public class LoginActivity extends AppCompatActivity {
                 public void onCodeSent(String verificationId) {
                     pendingVerificationId = verificationId;
                     runOnUiThread(() -> showOtpDialog());
+                @Override
+                public void onSuccess(User user) {
+                    navigateBasedOnRole(user);
                 }
                 @Override
                 public void onFailure(Exception e) {
@@ -136,5 +138,16 @@ public class LoginActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    private void navigateBasedOnRole(User user) {
+        if (user.getIsAdmin()) {
+            Intent intent = new Intent(LoginActivity.this, AdminManagementActivity.class);
+            intent.putExtra("adminId", user.getId());
+            startActivity(intent);
+        } else {
+            startActivity(new Intent(LoginActivity.this, EventListActivity.class));
+        }
+        finish();
     }
 }
