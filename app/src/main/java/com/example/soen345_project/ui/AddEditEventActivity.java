@@ -83,7 +83,7 @@ public class AddEditEventActivity extends AppCompatActivity {
                 etTitle.setText(event.getTitle());
                 etLocation.setText(event.getLocation());
                 etCategory.setText(event.getCategory());
-                etDate.setText(new SimpleDateFormat("YYYY-MM-DD", Locale.getDefault())
+                etDate.setText(new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                         .format(event.getDate()));
                 etSeats.setText(String.valueOf(event.getTotalSeats()));
             }
@@ -109,9 +109,9 @@ public class AddEditEventActivity extends AppCompatActivity {
 
         Date date;
         try {
-            date = new SimpleDateFormat("YYYY-MM-DD", Locale.getDefault()).parse(dateStr);
+            date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(dateStr);
         } catch (ParseException e) {
-            Toast.makeText(this, "Invalid date format. Use: YYYY-MM-DD", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Invalid date format. Use: yyyy-MM-dd", Toast.LENGTH_SHORT).show();
             return;
         }
 

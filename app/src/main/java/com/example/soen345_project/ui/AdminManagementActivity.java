@@ -17,6 +17,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.firebase.auth.FirebaseAuth;
 
 public class AdminManagementActivity extends AppCompatActivity {
 
@@ -76,6 +77,13 @@ public class AdminManagementActivity extends AppCompatActivity {
             intent.putExtra("adminId", adminId);
             intent.putExtra("isEdit", false);
             startActivity(intent);
+        });
+
+        Button btnAdminLogout = findViewById(R.id.btnAdminLogout);
+        btnAdminLogout.setOnClickListener(v -> {
+            FirebaseAuth.getInstance().signOut();
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
         });
 
         loadEvents();

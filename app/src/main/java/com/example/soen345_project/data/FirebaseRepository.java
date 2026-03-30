@@ -88,6 +88,13 @@ public class FirebaseRepository {
                     if (!event.isActive()) continue;
 
                     if (filters != null) {
+                        // filter by keyword (matches title or category)
+                        if (filters.containsKey("keyword")) {
+                            String keyword = filters.get("keyword").toLowerCase();
+                            boolean matchesName = event.getTitle() != null && event.getTitle().toLowerCase().contains(keyword);
+                            boolean matchesCategory = event.getCategory() != null && event.getCategory().toLowerCase().contains(keyword);
+                            if (!matchesName && !matchesCategory) continue;
+                        }
                         // filter by category
                         if (filters.containsKey("category")) {
                             String filterCategory = filters.get("category").toLowerCase();
