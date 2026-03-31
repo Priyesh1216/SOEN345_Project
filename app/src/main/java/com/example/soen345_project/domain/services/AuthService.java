@@ -75,20 +75,24 @@ public class AuthService {
     }
 
     public void signInEmail(String email, String password, AuthCallback callback) {
+
         if (email.isEmpty() || password.isEmpty()) {
             callback.onFailure(new Exception("Fields cannot be empty"));
             return;
         }
+
         firebaseAuth.signInWithEmailAndPassword(email, password)
                 .addOnSuccessListener(result -> {
                     FirebaseUser firebaseUser = result.getUser();
+
                     if (firebaseUser != null) {
-                        repository.getUser(firebaseUser.getUid(), new FirebaseRepository.GetUserCallback() {
-                            @Override
-                            public void onSuccess(User user) { callback.onSuccess(user); }
-                            @Override
-                            public void onFailure(Exception e) { callback.onFailure(e); }
-                        });
+                        User user = new User();
+                        user.setId(firebaseUser.getUid());
+                        user.setEmail(firebaseUser.getEmail());
+
+                        callback.onSuccess(user);
+                    } else {
+                        callback.onFailure(new Exception("User is null"));
                     }
                 })
                 .addOnFailureListener(callback::onFailure);
