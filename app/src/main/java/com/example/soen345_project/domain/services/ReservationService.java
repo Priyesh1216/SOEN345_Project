@@ -1,7 +1,9 @@
 package com.example.soen345_project.domain.services;
 
 import com.example.soen345_project.data.FirebaseRepository;
+import com.example.soen345_project.domain.models.Event;
 import com.example.soen345_project.domain.models.Reservation;
+import com.example.soen345_project.domain.models.User;
 
 import java.util.List;
 
@@ -25,8 +27,32 @@ public class ReservationService {
                     @Override
                     public void onSuccess(String reservationId) {
                         reservation.setId(reservationId);
-                        notifService.sendConfirmationMsg(userId,
-                                "Reservation for event " + eventId + " is confirmed.");
+                        repository.getUser(userId, new FirebaseRepository.GetUserCallback() {
+                            @Override
+                            public void onSuccess(User user) {
+                                String recipient = user.getEmail() != null
+                                        ? user.getEmail()
+                                        : user.getPhoneNumber();
+                                repository.getEvent(eventId, new FirebaseRepository.GetEventCallback() {
+                                    @Override
+                                    public void onSuccess(Event event) {
+                                        notifService.sendConfirmationMsg(recipient,
+                                                "Your reservation for \"" + event.getTitle() + "\""
+                                                        + " on " + event.getDate()
+                                                        + " is confirmed. You reserved "
+                                                        + quantity + " ticket(s).");
+                                    }
+                                    @Override
+                                    public void onFailure(Exception e) {
+                                        // don't block if event fetch fails
+                                    }
+                                });
+                            }
+                            @Override
+                            public void onFailure(Exception e) {
+                                // don't block the reservation if email fails
+                            }
+                        });
                         callback.onSuccess(reservation);
                     }
                     @Override
@@ -55,8 +81,33 @@ public class ReservationService {
                         @Override
                         public void onSuccess() {
                             reservation.cancel();
-                            notifService.sendCancellationMsg(userId,
-                                    "Reservation " + reservationId + " has been cancelled.");
+                            repository.getUser(userId, new FirebaseRepository.GetUserCallback() {
+                                @Override
+                                public void onSuccess(User user) {
+                                    String recipient = user.getEmail() != null
+                                            ? user.getEmail()
+                                            : user.getPhoneNumber();
+                                    repository.getEvent(reservation.getEventId(), new FirebaseRepository.GetEventCallback() {
+                                        @Override
+                                        public void onSuccess(Event event) {
+                                            notifService.sendCancellationMsg(recipient,
+                                                    "Your reservation for \"" + event.getTitle() + "\""
+                                                            + " on " + event.getDate()
+                                                            + " has been cancelled. "
+                                                            + reservation.getQuantity()
+                                                            + " seat(s) have been released.");
+                                        }
+                                        @Override
+                                        public void onFailure(Exception e) {
+                                            // Don't block if event fetch fails
+                                        }
+                                    });
+                                }
+                                @Override
+                                public void onFailure(Exception e) {
+                                    // don't block cancellation if email fails
+                                }
+                            });
                             callback.onSuccess(reservation);
                         }
                         @Override
