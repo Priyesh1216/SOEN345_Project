@@ -39,10 +39,19 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+    packaging {
+        resources {
+            excludes.add("META-INF/NOTICE.md")
+            excludes.add("META-INF/LICENSE.md")
+            excludes.add("META-INF/NOTICE")
+            excludes.add("META-INF/LICENSE")
+        }
+    }
 }
 
 dependencies {
-
+    implementation("com.sun.mail:android-mail:1.6.7")
+    implementation("com.sun.mail:android-activation:1.6.7")
     implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
 
     implementation("com.google.firebase:firebase-database")

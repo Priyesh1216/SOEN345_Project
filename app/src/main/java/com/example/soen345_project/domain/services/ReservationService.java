@@ -2,6 +2,7 @@ package com.example.soen345_project.domain.services;
 
 import com.example.soen345_project.data.FirebaseRepository;
 import com.example.soen345_project.domain.models.Reservation;
+import com.example.soen345_project.domain.models.User;
 
 import java.util.List;
 
@@ -25,8 +26,21 @@ public class ReservationService {
                     @Override
                     public void onSuccess(String reservationId) {
                         reservation.setId(reservationId);
-                        notifService.sendConfirmationMsg(userId,
-                                "Reservation for event " + eventId + " is confirmed.");
+                        repository.getUser(userId, new FirebaseRepository.GetUserCallback() {
+                            @Override
+                            public void onSuccess(User user) {
+                                String recipient = user.getEmail() != null
+                                        ? user.getEmail()
+                                        : user.getPhoneNumber(); // fallback for phone users
+                                notifService.sendConfirmationMsg(recipient,
+                                        "Your reservation for event " + eventId + " is confirmed. "
+                                                + "You reserved " + quantity + " ticket(s).");
+                            }
+                            @Override
+                            public void onFailure(Exception e) {
+                                // Don't block the reservation if email fails
+                            }
+                        });
                         callback.onSuccess(reservation);
                     }
                     @Override
@@ -52,8 +66,21 @@ public class ReservationService {
                 reservation.cancel();
                 // restore seats back to event
                 repository.transaction(reservation.getEventId(), -reservation.getQuantity(), success -> {
-                    notifService.sendCancellationMsg(userId,
-                            "Reservation " + reservationId + " has been cancelled.");
+                    repository.getUser(userId, new FirebaseRepository.GetUserCallback() {
+                        @Override
+                        public void onSuccess(User user) {
+                            String recipient = user.getEmail() != null
+                                    ? user.getEmail()
+                                    : user.getPhoneNumber(); // fallback for phone users
+                            notifService.sendCancellationMsg(recipient,
+                                    "Your reservation " + reservationId + " has been cancelled. "
+                                            + reservation.getQuantity() + " seat(s) have been released.");
+                        }
+                        @Override
+                        public void onFailure(Exception e) {
+                            // Don't block the cancellation if email fails
+                        }
+                    });
                     callback.onSuccess(reservation);
                 });
             }
