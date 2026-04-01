@@ -9,10 +9,11 @@ import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import com.example.soen345_project.BuildConfig;
 public class NotifService {
 
-    private static final String SENDER_EMAIL = "soen345.project@gmail.com";
-    private static final String SENDER_PASSWORD = "khgx olxr mxjn rclg";
+    private static final String SENDER_EMAIL = BuildConfig.SENDER_EMAIL;
+    private static final String SENDER_PASSWORD = BuildConfig.SENDER_PASSWORD;
     public NotifService() {}
 
     public void sendConfirmationMsg(String recipient, String message) {
