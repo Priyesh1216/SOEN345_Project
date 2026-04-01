@@ -29,6 +29,7 @@ android {
         }
         getByName("debug") {
             enableUnitTestCoverage = true
+            enableAndroidTestCoverage = true
         }
     }
     compileOptions {
