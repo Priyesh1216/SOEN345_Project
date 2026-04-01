@@ -26,7 +26,6 @@ public class FirebaseRepository {
 
     private final DatabaseReference db = FirebaseDatabase.getInstance().getReference();
 
-
     // --- User ---
 
     public void getUser(String userId, GetUserCallback callback) {
@@ -50,6 +49,7 @@ public class FirebaseRepository {
     }
 
     // --- Events ---
+
     public void getEvent(String eventId, GetEventCallback callback) {
         db.child("events").child(eventId).get()
             .addOnSuccessListener(snapshot -> {
@@ -65,7 +65,8 @@ public class FirebaseRepository {
     }
 
     public void saveEvent(Event event, EventService.EventCallback callback) {
-        String key = event.getId() != null ? event.getId() : db.child("events").push().getKey();
+        String key = event.getId() != null ?
+                event.getId() : db.child("events").push().getKey();
         event.setId(key);
 
         db.child("events").child(key).setValue(event)
@@ -84,30 +85,23 @@ public class FirebaseRepository {
                     if (event == null) continue;
                     event.setId(child.getKey());
 
-                    // skip cancelled events
                     if (!event.isActive()) continue;
 
                     if (filters != null) {
-                        // filter by keyword (matches title or category)
                         if (filters.containsKey("keyword")) {
                             String keyword = filters.get("keyword").toLowerCase();
                             boolean matchesName = event.getTitle() != null && event.getTitle().toLowerCase().contains(keyword);
                             boolean matchesCategory = event.getCategory() != null && event.getCategory().toLowerCase().contains(keyword);
                             if (!matchesName && !matchesCategory) continue;
                         }
-                        // filter by category
                         if (filters.containsKey("category")) {
                             String filterCategory = filters.get("category").toLowerCase();
                             if (!event.getCategory().toLowerCase().contains(filterCategory)) continue;
                         }
-
-                        // filter by location
                         if (filters.containsKey("location")) {
                             String filterLocation = filters.get("location").toLowerCase();
                             if (!event.getLocation().toLowerCase().contains(filterLocation)) continue;
                         }
-
-                        // filter by date range - expects "dateFrom" and/or "dateTo" as "yyyy-MM-dd"
                         if (filters.containsKey("dateFrom")) {
                             try {
                                 Date dateFrom = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -118,7 +112,6 @@ public class FirebaseRepository {
                                 return;
                             }
                         }
-
                         if (filters.containsKey("dateTo")) {
                             try {
                                 Date dateTo = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -145,6 +138,7 @@ public class FirebaseRepository {
     }
 
     // --- Reservations ---
+
     public void getReservation(String reservationId, GetReservationCallback callback) {
         db.child("reservations").child(reservationId).get()
             .addOnSuccessListener(snapshot -> {
@@ -182,6 +176,37 @@ public class FirebaseRepository {
             });
     }
 
+    /**
+     * Finds the active reservation for a specific user + event combination.
+     * Returns null via onSuccess if none exists.
+     */
+    public void getReservationByUserAndEvent(String userId, String eventId,
+                                             GetReservationCallback callback) {
+        db.child("reservations")
+            .orderByChild("userId").equalTo(userId)
+            .addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot snapshot) {
+                    for (DataSnapshot child : snapshot.getChildren()) {
+                        Reservation r = child.getValue(Reservation.class);
+                        if (r != null && eventId.equals(r.getEventId())
+                                && r.getStatus() == Reservation.Status.CONFIRMED) {
+                            r.setId(child.getKey());
+                            callback.onSuccess(r);
+                            return;
+                        }
+                    }
+                    // None found — signal with null id reservation
+                    callback.onSuccess(null);
+                }
+
+                @Override
+                public void onCancelled(DatabaseError error) {
+                    callback.onFailure(error.toException());
+                }
+            });
+    }
+
     public void createReservation(Reservation reservation, CreateReservationCallback callback) {
         String key = db.child("reservations").push().getKey();
         reservation.setId(key);
@@ -191,7 +216,13 @@ public class FirebaseRepository {
             .addOnFailureListener(e -> callback.onFailure(e));
     }
 
-    public void transaction(String eventId, int quantity, TransactionCallback callback) {
+    public void deleteReservation(String reservationId, SimpleCallback callback) {
+        db.child("reservations").child(reservationId).removeValue()
+            .addOnSuccessListener(aVoid -> callback.onSuccess())
+            .addOnFailureListener(e -> callback.onFailure(e));
+    }
+
+    public void transaction(String eventId, int delta, TransactionCallback callback) {
         db.child("events").child(eventId).child("openSeats")
             .runTransaction(new Transaction.Handler() {
                 @Override
@@ -199,13 +230,15 @@ public class FirebaseRepository {
                     Integer currentSeats = currentData.getValue(Integer.class);
 
                     if (currentSeats == null) {
-                        return Transaction.abort();
+                        // Data not cached yet — return success unchanged so Firebase
+                        // retries with the real server value instead of aborting
+                        return Transaction.success(currentData);
                     }
 
-                    int newSeats = currentSeats + quantity; // quantity is negative when cancelling
+                    int newSeats = currentSeats + delta;
 
                     if (newSeats < 0) {
-                        return Transaction.abort(); // not enough seats
+                        return Transaction.abort(); // genuinely not enough seats
                     }
 
                     currentData.setValue(newSeats);

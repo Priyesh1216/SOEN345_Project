@@ -3,6 +3,7 @@ package com.example.soen345_project.ui.adapters
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.soen345_project.R
@@ -12,7 +13,10 @@ import java.util.Locale
 
 class FirebaseEventAdapter(
     private val events: List<Event>,
-    private val listener: (Event) -> Unit
+    // reservedEventIds: set of eventIds the current user has already reserved
+    private val reservedEventIds: Map<String, String>, // eventId -> reservationId
+    private val onReserveClick: (Event) -> Unit,
+    private val onCancelClick: (Event, String) -> Unit  // event, reservationId
 ) : RecyclerView.Adapter<FirebaseEventAdapter.EventViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): EventViewHolder {
@@ -21,14 +25,32 @@ class FirebaseEventAdapter(
     }
 
     override fun onBindViewHolder(holder: EventViewHolder, position: Int) {
-        val currentItem = events[position]
-        holder.tvTitle.text = currentItem.title
+        val event = events[position]
+        holder.tvTitle.text = event.title
         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        holder.tvDate.text = currentItem.date?.let { dateFormat.format(it) } ?: ""
-        holder.tvLocation.text = currentItem.location
+        holder.tvDate.text = event.date?.let { dateFormat.format(it) } ?: ""
+        holder.tvLocation.text = event.location ?: ""
+        holder.tvCategory.text = event.category ?: ""
+        holder.tvSeats.text = "Seats available: ${event.openSeats}"
 
-        holder.itemView.setOnClickListener {
-            listener(currentItem)
+        val reservationId = reservedEventIds[event.id]
+        val isReserved = reservationId != null
+
+        if (isReserved) {
+            holder.btnAction.text = "Cancel"
+            holder.btnAction.isEnabled = true
+            holder.btnAction.setBackgroundColor(0xFFE53935.toInt()) // red
+            holder.btnAction.setOnClickListener {
+                onCancelClick(event, reservationId!!)
+            }
+        } else {
+            val hasSeats = event.openSeats > 0 && event.isActive
+            holder.btnAction.text = if (hasSeats) "Reserve" else "Full"
+            holder.btnAction.isEnabled = hasSeats
+            holder.btnAction.setBackgroundColor(0xFF6200EE.toInt()) // purple
+            holder.btnAction.setOnClickListener {
+                onReserveClick(event)
+            }
         }
     }
 
@@ -38,5 +60,8 @@ class FirebaseEventAdapter(
         val tvTitle: TextView = itemView.findViewById(R.id.tvEventTitle)
         val tvDate: TextView = itemView.findViewById(R.id.tvEventDate)
         val tvLocation: TextView = itemView.findViewById(R.id.tvEventLocation)
+        val tvCategory: TextView = itemView.findViewById(R.id.tvEventCategory)
+        val tvSeats: TextView = itemView.findViewById(R.id.tvEventSeats)
+        val btnAction: Button = itemView.findViewById(R.id.btnReserveEvent)
     }
 }

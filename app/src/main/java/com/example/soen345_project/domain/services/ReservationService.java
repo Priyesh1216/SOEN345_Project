@@ -17,8 +17,8 @@ public class ReservationService {
 
     public void reserveTickets(String userId, String eventId, int quantity,
                                ReservationCallback callback) {
-        // atomically check and decrement seats
-        repository.transaction(eventId, quantity, success -> {
+        // Pass -quantity to decrement seats atomically
+        repository.transaction(eventId, -quantity, success -> {
             if (success) {
                 Reservation reservation = new Reservation(eventId, userId, quantity);
                 repository.createReservation(reservation, new FirebaseRepository.CreateReservationCallback() {
@@ -49,12 +49,21 @@ public class ReservationService {
         repository.getReservation(reservationId, new FirebaseRepository.GetReservationCallback() {
             @Override
             public void onSuccess(Reservation reservation) {
-                reservation.cancel();
-                // restore seats back to event
-                repository.transaction(reservation.getEventId(), -reservation.getQuantity(), success -> {
-                    notifService.sendCancellationMsg(userId,
-                            "Reservation " + reservationId + " has been cancelled.");
-                    callback.onSuccess(reservation);
+                // Pass +quantity to restore seats atomically
+                repository.transaction(reservation.getEventId(), reservation.getQuantity(), success -> {
+                    repository.deleteReservation(reservationId, new FirebaseRepository.SimpleCallback() {
+                        @Override
+                        public void onSuccess() {
+                            reservation.cancel();
+                            notifService.sendCancellationMsg(userId,
+                                    "Reservation " + reservationId + " has been cancelled.");
+                            callback.onSuccess(reservation);
+                        }
+                        @Override
+                        public void onFailure(Exception e) {
+                            callback.onFailure(e);
+                        }
+                    });
                 });
             }
             @Override

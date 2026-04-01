@@ -2,36 +2,69 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="?android:attr/selectableItemBackground"
-    android:clickable="true"
-    android:focusable="true"
     android:orientation="vertical"
-    android:padding="16dp"
+    android:padding="12dp"
     android:layout_marginBottom="8dp"
+    android:background="@android:color/white"
     android:elevation="2dp">
 
     <TextView
         android:id="@+id/tvEventTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="18sp"
+        android:textSize="16sp"
         android:textStyle="bold"
-        android:textColor="#333333" />
+        android:textColor="#212121" />
+
+    <TextView
+        android:id="@+id/tvEventCategory"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        android:textColor="#6200EE"
+        android:textStyle="italic"
+        android:layout_marginTop="2dp" />
 
     <TextView
         android:id="@+id/tvEventDate"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:textSize="14sp"
-        android:textColor="#666666" />
+        android:textSize="13sp"
+        android:textColor="#757575"
+        android:layout_marginTop="4dp" />
 
     <TextView
         android:id="@+id/tvEventLocation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:textSize="14sp"
-        android:textColor="#666666" />
+        android:textSize="13sp"
+        android:textColor="#757575" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="8dp">
+
+        <TextView
+            android:id="@+id/tvEventSeats"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="#9E9E9E" />
+
+        <Button
+            android:id="@+id/btnReserveEvent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Reserve"
+            android:textSize="13sp"
+            android:textColor="#FFFFFF"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp" />
+
+    </LinearLayout>
 
 </LinearLayout>
