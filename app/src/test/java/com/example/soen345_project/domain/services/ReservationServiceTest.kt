@@ -34,6 +34,8 @@ class ReservationServiceTest {
     fun reserveTickets_transactionSucceeds_createsReservationAndNotifies() {
         val txCaptor = ArgumentCaptor.forClass(TransactionCallback::class.java)
         val createCaptor = ArgumentCaptor.forClass(CreateReservationCallback::class.java)
+        val getUserCaptor = ArgumentCaptor.forClass(GetUserCallback::class.java)
+        val getEventCaptor = ArgumentCaptor.forClass(GetEventCallback::class.java)
 
         var successCalled = false
         var capturedReservation: Reservation? = null
@@ -53,9 +55,21 @@ class ReservationServiceTest {
         verify(mockRepository).createReservation(any(), createCaptor.capture())
         createCaptor.value.onSuccess("resId123")
 
+        verify(mockRepository).getUser(eq("user1"), getUserCaptor.capture())
+        val mockUser = com.example.soen345_project.domain.models.User()
+        mockUser.setEmail("user1@test.com")
+        getUserCaptor.value.onSuccess(mockUser)
+        println("interactions: ${mockingDetails(mockRepository).invocations}")
+
+        verify(mockRepository).getEvent(eq("event1"), getEventCaptor.capture())
+        val mockEvent = com.example.soen345_project.domain.models.Event(
+            "Test Event", java.util.Date(), "Montreal", "Music", 10
+        )
+        getEventCaptor.value.onSuccess(mockEvent)
+
         assertEquals(true, successCalled)
         assertEquals("resId123", capturedReservation?.id)
-        verify(mockNotifService).sendConfirmationMsg(eq("user1"), anyString())
+        verify(mockNotifService).sendConfirmationMsg(eq("user1@test.com"), anyString())
     }
 
     @Test
@@ -112,6 +126,8 @@ class ReservationServiceTest {
         val getCaptor = ArgumentCaptor.forClass(GetReservationCallback::class.java)
         val txCaptor = ArgumentCaptor.forClass(TransactionCallback::class.java)
         val deleteCaptor = ArgumentCaptor.forClass(SimpleCallback::class.java)
+        val getUserCaptor = ArgumentCaptor.forClass(GetUserCallback::class.java)
+        val getEventCaptor = ArgumentCaptor.forClass(GetEventCallback::class.java)
 
         val reservation = Reservation("event1", "user1", 2)
         reservation.id = "res1"
@@ -137,9 +153,23 @@ class ReservationServiceTest {
         verify(mockRepository).deleteReservation(eq("res1"), deleteCaptor.capture())
         deleteCaptor.value.onSuccess()
 
+        // Simulate getUser callback
+        verify(mockRepository).getUser(eq("user1"), getUserCaptor.capture())
+        val mockUser = com.example.soen345_project.domain.models.User()
+        mockUser.setEmail("user1@test.com")
+        getUserCaptor.value.onSuccess(mockUser)
+        println("interactions: ${mockingDetails(mockRepository).invocations}")
+
+        // Simulate getEvent callback
+        verify(mockRepository).getEvent(eq("event1"), getEventCaptor.capture())
+        val mockEvent = com.example.soen345_project.domain.models.Event(
+            "Test Event", java.util.Date(), "Montreal", "Music", 10
+        )
+        getEventCaptor.value.onSuccess(mockEvent)
+
         assertEquals(true, successCalled)
         assertEquals(Reservation.Status.CANCELLED, capturedReservation?.status)
-        verify(mockNotifService).sendCancellationMsg(eq("user1"), anyString())
+        verify(mockNotifService).sendCancellationMsg(eq("user1@test.com"), anyString())
     }
 
     @Test

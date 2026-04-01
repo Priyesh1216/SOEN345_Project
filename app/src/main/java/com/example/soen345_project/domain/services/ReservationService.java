@@ -1,6 +1,7 @@
 package com.example.soen345_project.domain.services;
 
 import com.example.soen345_project.data.FirebaseRepository;
+import com.example.soen345_project.domain.models.Event;
 import com.example.soen345_project.domain.models.Reservation;
 import com.example.soen345_project.domain.models.User;
 
@@ -32,9 +33,20 @@ public class ReservationService {
                                 String recipient = user.getEmail() != null
                                         ? user.getEmail()
                                         : user.getPhoneNumber();
-                                notifService.sendConfirmationMsg(recipient,
-                                        "Your reservation for event " + eventId + " is confirmed. "
-                                                + "You reserved " + quantity + " ticket(s).");
+                                repository.getEvent(eventId, new FirebaseRepository.GetEventCallback() {
+                                    @Override
+                                    public void onSuccess(Event event) {
+                                        notifService.sendConfirmationMsg(recipient,
+                                                "Your reservation for \"" + event.getTitle() + "\""
+                                                        + " on " + event.getDate()
+                                                        + " is confirmed. You reserved "
+                                                        + quantity + " ticket(s).");
+                                    }
+                                    @Override
+                                    public void onFailure(Exception e) {
+                                        // don't block if event fetch fails
+                                    }
+                                });
                             }
                             @Override
                             public void onFailure(Exception e) {
@@ -75,9 +87,21 @@ public class ReservationService {
                                     String recipient = user.getEmail() != null
                                             ? user.getEmail()
                                             : user.getPhoneNumber();
-                                    notifService.sendCancellationMsg(recipient,
-                                            "Your reservation " + reservationId + " has been cancelled. "
-                                                    + reservation.getQuantity() + " seat(s) have been released.");
+                                    repository.getEvent(reservation.getEventId(), new FirebaseRepository.GetEventCallback() {
+                                        @Override
+                                        public void onSuccess(Event event) {
+                                            notifService.sendCancellationMsg(recipient,
+                                                    "Your reservation for \"" + event.getTitle() + "\""
+                                                            + " on " + event.getDate()
+                                                            + " has been cancelled. "
+                                                            + reservation.getQuantity()
+                                                            + " seat(s) have been released.");
+                                        }
+                                        @Override
+                                        public void onFailure(Exception e) {
+                                            // Don't block if event fetch fails
+                                        }
+                                    });
                                 }
                                 @Override
                                 public void onFailure(Exception e) {
