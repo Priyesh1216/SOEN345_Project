@@ -46,9 +46,9 @@ public class AuthService {
                 .addOnFailureListener(callback::onFailure);
     }
 
-    public void registerPhone(String phoneNum, String name, Activity activity, AuthCallback callback) {
+    public void registerPhone(String phoneNum, String name, Activity activity, AuthCallback authCallback, PhoneCodeSentCallback codeSentCallback) {
         if (phoneNum.isEmpty() || name.isEmpty()) {
-            callback.onFailure(new Exception("Fields cannot be empty"));
+            codeSentCallback.onFailure(new Exception("Fields cannot be empty"));
             return;
         }
         PhoneAuthOptions options = PhoneAuthOptions.newBuilder(firebaseAuth)
@@ -57,29 +57,17 @@ public class AuthService {
                 .setActivity(activity)
                 .setCallbacks(new PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
                     @Override
-                    public void onVerificationCompleted(PhoneAuthCredential credential) {
-                        firebaseAuth.signInWithCredential(credential)
-                                .addOnSuccessListener(result -> {
-                                    FirebaseUser firebaseUser = result.getUser();
-                                    if (firebaseUser != null) {
-                                        String uid = firebaseUser.getUid();
-                                        User user = new User();
-                                        user.setId(uid);
-                                        user.setName(name);
-                                        user.setPhoneNumber(phoneNum);
-                                        repository.saveUser(uid, user, new FirebaseRepository.SimpleCallback() {
-                                            @Override
-                                            public void onSuccess() { callback.onSuccess(user); }
-                                            @Override
-                                            public void onFailure(Exception e) { callback.onFailure(e); }
-                                        });
-                                    }
-                                })
-                                .addOnFailureListener(callback::onFailure);
+                    public void onVerificationCompleted(PhoneAuthCredential credential){
+                        signInWithCredentialAndSave(credential, phoneNum, name, authCallback);
                     }
                     @Override
                     public void onVerificationFailed(FirebaseException e) {
-                        callback.onFailure(e);
+                        codeSentCallback.onFailure(e);
+                    }
+                    @Override
+                    public void onCodeSent(String verificationId,
+                                           PhoneAuthProvider.ForceResendingToken token) {
+                        codeSentCallback.onCodeSent(verificationId);
                     }
                 })
                 .build();
@@ -87,28 +75,32 @@ public class AuthService {
     }
 
     public void signInEmail(String email, String password, AuthCallback callback) {
+
         if (email.isEmpty() || password.isEmpty()) {
             callback.onFailure(new Exception("Fields cannot be empty"));
             return;
         }
+
         firebaseAuth.signInWithEmailAndPassword(email, password)
                 .addOnSuccessListener(result -> {
                     FirebaseUser firebaseUser = result.getUser();
+
                     if (firebaseUser != null) {
-                        repository.getUser(firebaseUser.getUid(), new FirebaseRepository.GetUserCallback() {
-                            @Override
-                            public void onSuccess(User user) { callback.onSuccess(user); }
-                            @Override
-                            public void onFailure(Exception e) { callback.onFailure(e); }
-                        });
+                        User user = new User();
+                        user.setId(firebaseUser.getUid());
+                        user.setEmail(firebaseUser.getEmail());
+
+                        callback.onSuccess(user);
+                    } else {
+                        callback.onFailure(new Exception("User is null"));
                     }
                 })
                 .addOnFailureListener(callback::onFailure);
     }
 
-    public void signInPhone(String phoneNum, Activity activity, AuthCallback callback) {
+    public void signInPhone(String phoneNum, Activity activity, AuthCallback authCallback, PhoneCodeSentCallback codeSentCallback) {
         if (phoneNum.isEmpty()) {
-            callback.onFailure(new Exception("Phone number cannot be empty"));
+            authCallback.onFailure(new Exception("Phone number cannot be empty"));
             return;
         }
         PhoneAuthOptions options = PhoneAuthOptions.newBuilder(firebaseAuth)
@@ -124,17 +116,22 @@ public class AuthService {
                                     if (firebaseUser != null) {
                                         repository.getUser(firebaseUser.getUid(), new FirebaseRepository.GetUserCallback() {
                                             @Override
-                                            public void onSuccess(User user) { callback.onSuccess(user); }
+                                            public void onSuccess(User user) { authCallback.onSuccess(user); }
                                             @Override
-                                            public void onFailure(Exception e) { callback.onFailure(e); }
+                                            public void onFailure(Exception e) { authCallback.onFailure(e); }
                                         });
                                     }
                                 })
-                                .addOnFailureListener(callback::onFailure);
+                                .addOnFailureListener(authCallback::onFailure);
                     }
                     @Override
                     public void onVerificationFailed(FirebaseException e) {
-                        callback.onFailure(e);
+                        authCallback.onFailure(e);
+                    }
+                    @Override
+                    public void onCodeSent(String verificationId,
+                                           PhoneAuthProvider.ForceResendingToken token) {
+                        codeSentCallback.onCodeSent(verificationId);
                     }
                 })
                 .build();
@@ -145,8 +142,58 @@ public class AuthService {
         firebaseAuth.signOut();
     }
 
+    public void verifyOtpAndRegister(String verificationId, String otp, String phoneNum,
+                                     String name, AuthCallback callback) {
+        PhoneAuthCredential credential = PhoneAuthProvider.getCredential(verificationId, otp);
+        signInWithCredentialAndSave(credential, phoneNum, name, callback);
+    }
+
+    public void verifyOtpAndLogin(String verificationId, String otp, AuthCallback callback) {
+        PhoneAuthCredential credential = PhoneAuthProvider.getCredential(verificationId, otp);
+        firebaseAuth.signInWithCredential(credential)
+                .addOnSuccessListener(result -> {
+                    FirebaseUser firebaseUser = result.getUser();
+                    if (firebaseUser != null) {
+                        repository.getUser(firebaseUser.getUid(), new FirebaseRepository.GetUserCallback() {
+                            @Override
+                            public void onSuccess(User user) { callback.onSuccess(user); }
+                            @Override
+                            public void onFailure(Exception e) { callback.onFailure(e); }
+                        });
+                    }
+                })
+                .addOnFailureListener(callback::onFailure);
+    }
+
+    private void signInWithCredentialAndSave(PhoneAuthCredential credential, String phoneNum,
+                                             String name, AuthCallback callback) {
+        firebaseAuth.signInWithCredential(credential)
+                .addOnSuccessListener(result -> {
+                    FirebaseUser firebaseUser = result.getUser();
+                    if (firebaseUser != null) {
+                        String uid = firebaseUser.getUid();
+                        User user = new User();
+                        user.setId(uid);
+                        user.setName(name);
+                        user.setPhoneNumber(phoneNum);
+                        repository.saveUser(uid, user, new FirebaseRepository.SimpleCallback() {
+                            @Override
+                            public void onSuccess() { callback.onSuccess(user); }
+                            @Override
+                            public void onFailure(Exception e) { callback.onFailure(e); }
+                        });
+                    }
+                })
+                .addOnFailureListener(callback::onFailure);
+    }
+
     public interface AuthCallback {
         void onSuccess(User user);
+        void onFailure(Exception e);
+    }
+
+    public interface PhoneCodeSentCallback{
+        void onCodeSent(String verificationId);
         void onFailure(Exception e);
     }
 }

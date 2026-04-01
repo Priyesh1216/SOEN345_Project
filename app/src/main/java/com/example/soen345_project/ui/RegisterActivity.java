@@ -17,15 +17,20 @@ public class RegisterActivity extends AppCompatActivity {
 
     private AuthController authController;
     private EditText etName, etEmail, etPhone, etPassword;
+    // Add field at the top of RegisterActivity
+    private String pendingVerificationId;
+    private String pendingPhone;
+    private String pendingName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
 
-        authController = new AuthController(
-                new AuthService(FirebaseAuth.getInstance(), new FirebaseRepository()));
 
+        FirebaseAuth.getInstance().getFirebaseAuthSettings()
+                .setAppVerificationDisabledForTesting(true);
+        authController = new AuthController(new AuthService(FirebaseAuth.getInstance(), new FirebaseRepository()));
         etName     = findViewById(R.id.etRegisterName);
         etEmail    = findViewById(R.id.etRegisterEmail);
         etPhone    = findViewById(R.id.etRegisterPhone);
@@ -80,17 +85,68 @@ public class RegisterActivity extends AppCompatActivity {
                 Toast.makeText(this, "Use format: +15141234567", Toast.LENGTH_SHORT).show();
                 return;
             }
-            authController.registerWithPhone(phone, name, RegisterActivity.this, new AuthService.AuthCallback() {
-                @Override
-                public void onSuccess(User user) {
-                    startActivity(new Intent(RegisterActivity.this, EventListActivity.class));
-                    finish();
-                }
-                @Override
-                public void onFailure(Exception e) {
-                    Toast.makeText(RegisterActivity.this, "Registration failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                }
-            });
+            pendingPhone = phone;
+            pendingName  = name;
+
+            authController.registerWithPhone(phone, name, this,
+                    new AuthService.AuthCallback() {
+                        @Override
+                        public void onSuccess(User user) {
+                            startActivity(new Intent(RegisterActivity.this, EventListActivity.class));
+                            finish();
+                        }
+                        @Override
+                        public void onFailure(Exception e) {
+                            Toast.makeText(RegisterActivity.this,
+                                    "Registration failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    },
+                    new AuthService.PhoneCodeSentCallback() {
+                        @Override
+                        public void onCodeSent(String verificationId) {
+                            pendingVerificationId = verificationId;
+                            showOtpDialog(); // prompt user to enter the SMS code
+                        }
+                        @Override
+                        public void onFailure(Exception e) {
+                            System.out.println(e.getMessage());
+                            Toast.makeText(RegisterActivity.this,
+                                    "Phone auth failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+            );
         }
+    }
+    private void showOtpDialog() {
+        EditText otpInput = new EditText(this);
+        otpInput.setHint("Enter 6-digit code");
+        otpInput.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Enter verification code")
+                .setMessage("A code was sent to " + pendingPhone)
+                .setView(otpInput)
+                .setPositiveButton("Verify", (dialog, which) -> {
+                    String otp = otpInput.getText().toString().trim();
+                    if (otp.length() != 6) {
+                        Toast.makeText(this, "Enter the 6-digit code", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    authController.verifyOtpAndRegister(pendingVerificationId, otp,
+                            pendingPhone, pendingName, new AuthService.AuthCallback() {
+                                @Override
+                                public void onSuccess(User user) {
+                                    startActivity(new Intent(RegisterActivity.this, EventListActivity.class));
+                                    finish();
+                                }
+                                @Override
+                                public void onFailure(Exception e) {
+                                    Toast.makeText(RegisterActivity.this,
+                                            "Invalid code: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 }
