@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.soen345_project.R;
 import com.example.soen345_project.api.AuthController;
 import com.example.soen345_project.data.FirebaseRepository;
+import com.example.soen345_project.domain.InputValidator;
 import com.example.soen345_project.domain.models.User;
 import com.example.soen345_project.domain.services.AuthService;
 import com.google.firebase.auth.FirebaseAuth;
@@ -26,7 +27,6 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-
         authController = new AuthController(
                 new AuthService(FirebaseAuth.getInstance(), new FirebaseRepository()));
 
@@ -42,24 +42,42 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void handleLogin() {
+        // Clear previous errors
+        etEmail.setError(null);
+        etPhone.setError(null);
+        etPassword.setError(null);
+
         String email    = etEmail.getText().toString().trim();
         String phone    = etPhone.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
 
-        if (password.isEmpty()) {
-            Toast.makeText(this, "Password is required", Toast.LENGTH_SHORT).show();
+        String passwordError = InputValidator.validateRequired(password, "Password");
+        if (passwordError != null) {
+            etPassword.setError(passwordError);
+            etPassword.requestFocus();
             return;
         }
+
         if (email.isEmpty() && phone.isEmpty()) {
-            Toast.makeText(this, "Please enter either an email or a phone number", Toast.LENGTH_LONG).show();
+            etEmail.setError("Enter either an email or a phone number");
+            etPhone.setError("Enter either an email or a phone number");
+            etEmail.requestFocus();
             return;
         }
         if (!email.isEmpty() && !phone.isEmpty()) {
-            Toast.makeText(this, "Please enter either email or phone, not both", Toast.LENGTH_LONG).show();
+            etEmail.setError("Use only email or phone, not both");
+            etPhone.setError("Use only email or phone, not both");
+            etEmail.requestFocus();
             return;
         }
 
         if (!email.isEmpty()) {
+            String emailError = InputValidator.validateEmail(email);
+            if (emailError != null) {
+                etEmail.setError(emailError);
+                etEmail.requestFocus();
+                return;
+            }
             authController.signInWithEmail(email, password, new AuthService.AuthCallback() {
                 @Override
                 public void onSuccess(User user) {
@@ -71,12 +89,13 @@ public class LoginActivity extends AppCompatActivity {
                 }
             });
         } else {
-
             FirebaseAuth.getInstance().getFirebaseAuthSettings()
                     .setAppVerificationDisabledForTesting(true);
 
-            if (!phone.matches("^\\+[1-9]\\d{7,14}$")) {
-                Toast.makeText(this, "Use format: +15141234567", Toast.LENGTH_SHORT).show();
+            String phoneError = InputValidator.validatePhone(phone);
+            if (phoneError != null) {
+                etPhone.setError(phoneError);
+                etPhone.requestFocus();
                 return;
             }
             pendingPhone = phone;
@@ -90,7 +109,7 @@ public class LoginActivity extends AppCompatActivity {
                             runOnUiThread(() -> Toast.makeText(LoginActivity.this,
                                     "Login failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
                         }
-                    },new AuthService.PhoneCodeSentCallback() {
+                    }, new AuthService.PhoneCodeSentCallback() {
                 @Override
                 public void onCodeSent(String verificationId) {
                     pendingVerificationId = verificationId;
@@ -100,10 +119,10 @@ public class LoginActivity extends AppCompatActivity {
                 public void onFailure(Exception e) {
                     Toast.makeText(LoginActivity.this, "Login failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 }
-            }
-            );
+            });
         }
     }
+
     private void showOtpDialog() {
         EditText otpInput = new EditText(this);
         otpInput.setHint("Enter 6-digit code");
@@ -136,6 +155,7 @@ public class LoginActivity extends AppCompatActivity {
                 .setNegativeButton("Cancel", null)
                 .show();
     }
+
     private void navigateBasedOnRole(User user) {
         startActivity(new Intent(LoginActivity.this, EventListActivity.class));
         finish();
