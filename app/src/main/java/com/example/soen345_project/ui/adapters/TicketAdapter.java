@@ -10,22 +10,31 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.soen345_project.R;
-import com.example.soen345_project.domain.models.MockTicket;
+import com.example.soen345_project.domain.models.Reservation;
+import com.example.soen345_project.domain.models.Event;
+import java.util.Map;
+import java.util.HashMap;
 
 import java.util.List;
 
 public class TicketAdapter extends RecyclerView.Adapter<TicketAdapter.TicketViewHolder> {
 
-    private List<MockTicket> tickets;
-    private OnTicketCancelListener cancelListener;
+    private List<Reservation> reservations;
+    private Map<String, Event> eventMap = new HashMap<>();
+    private OnReservationCancelListener cancelListener;
 
-    public interface OnTicketCancelListener {
-        void onCancel(MockTicket ticket, int position);
+    public interface OnReservationCancelListener {
+        void onCancel(Reservation reservation, int position);
     }
 
-    public TicketAdapter(List<MockTicket> tickets, OnTicketCancelListener cancelListener) {
-        this.tickets = tickets;
+    public TicketAdapter(List<Reservation> reservations, OnReservationCancelListener cancelListener) {
+        this.reservations = reservations;
         this.cancelListener = cancelListener;
+    }
+
+    public void setEventMap(Map<String, Event> eventMap) {
+        this.eventMap = eventMap;
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -37,21 +46,29 @@ public class TicketAdapter extends RecyclerView.Adapter<TicketAdapter.TicketView
 
     @Override
     public void onBindViewHolder(@NonNull TicketViewHolder holder, int position) {
-        MockTicket currentItem = tickets.get(position);
-        holder.tvEventName.setText(currentItem.getEvent().getTitle());
-        holder.tvDate.setText(currentItem.getEvent().getDate());
-        holder.tvQuantity.setText("Tickets: " + currentItem.getQuantity());
+        Reservation res = reservations.get(position);
+        Event event = eventMap.get(res.getEventId());
+
+        if (event != null) {
+            holder.tvEventName.setText(event.getTitle());
+            holder.tvDate.setText(event.getDate().toString()); 
+        } else {
+            holder.tvEventName.setText("Loading...");
+            holder.tvDate.setText("");
+        }
+        
+        holder.tvQuantity.setText("Tickets: " + res.getQuantity());
 
         holder.btnCancel.setOnClickListener(v -> {
             if (cancelListener != null) {
-                cancelListener.onCancel(currentItem, position);
+                cancelListener.onCancel(res, position);
             }
         });
     }
 
     @Override
     public int getItemCount() {
-        return tickets.size();
+        return reservations.size();
     }
 
     public static class TicketViewHolder extends RecyclerView.ViewHolder {

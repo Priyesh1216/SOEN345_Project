@@ -1,15 +1,13 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="#F5F5F5">
 
-    <!-- Main Content Area taking remaining space -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottomNavigation"
         android:orientation="vertical">
 
         <TextView
@@ -32,42 +30,13 @@
 
     </LinearLayout>
 
-    <!-- Bottom Navigation Bar -->
-    <LinearLayout
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:layout_alignParentBottom="true"
         android:background="#FFFFFF"
-        android:elevation="16dp"
-        android:paddingTop="4dp"
-        android:paddingBottom="4dp">
+        app:menu="@menu/bottom_nav_menu"
+        android:elevation="8dp" />
 
-        <Button
-            android:id="@+id/navHome"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Home"
-            android:textColor="#757575"
-            android:background="#00000000" />
-
-        <Button
-            android:id="@+id/navTickets"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Tickets"
-            android:textColor="#2196F3"
-            android:textStyle="bold"
-            android:background="#00000000" />
-
-        <Button
-            android:id="@+id/navProfile"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Profile"
-            android:textColor="#757575"
-            android:background="#00000000" />
-    </LinearLayout>
-</LinearLayout>
+</RelativeLayout>

@@ -53,8 +53,24 @@ class EventListActivity : AppCompatActivity() {
         adapter = FirebaseEventAdapter(
             eventList,
             reservedEventIds,
+            isAdmin = false,
             onReserveClick = { event -> showReserveDialog(event) },
-            onCancelClick = { event, reservationId -> showCancelDialog(event, reservationId) }
+            onCancelClick = { event, reservationId -> showCancelDialog(event, reservationId) },
+            onEditClick = { event ->
+                val intent = Intent(this, AddEditEventActivity::class.java)
+                intent.putExtra("adminId", FirebaseAuth.getInstance().currentUser?.uid)
+                intent.putExtra("eventId", event.id)
+                intent.putExtra("isEdit", true)
+                startActivity(intent)
+            },
+            onAdminCancelClick = { event ->
+                showAdminCancelDialog(event)
+            },
+            onViewReservationsClick = { event ->
+                val intent = Intent(this, ViewReservationsActivity::class.java)
+                intent.putExtra("eventId", event.id)
+                startActivity(intent)
+            }
         )
         rvEvents.adapter = adapter
 
@@ -87,6 +103,47 @@ class EventListActivity : AppCompatActivity() {
                 category = etFilterCategory.text.toString().takeIf { it.isNotEmpty() }
             )
             viewModel.applyFilters(criteria)
+        }
+
+        val bottomNavigation = findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(R.id.bottomNavigation)
+        bottomNavigation.selectedItemId = R.id.nav_home
+        bottomNavigation.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_home -> true
+                R.id.nav_tickets -> {
+                    startActivity(Intent(this, MyTicketsActivity::class.java))
+                    true
+                }
+                else -> false
+            }
+        }
+
+        val btnCreateEvent = findViewById<Button>(R.id.btnCreateEvent)
+        btnCreateEvent.setOnClickListener {
+            val userId = FirebaseAuth.getInstance().currentUser?.uid
+            val intent = Intent(this, AddEditEventActivity::class.java)
+            intent.putExtra("adminId", userId)
+            intent.putExtra("isEdit", false)
+            startActivity(intent)
+        }
+
+        // Check if user is admin to show Create Event button
+        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+        if (currentUserId != null) {
+            repository.getUser(currentUserId, object : FirebaseRepository.GetUserCallback {
+                override fun onSuccess(user: com.example.soen345_project.domain.models.User) {
+                    if (user.isAdmin) {
+                        runOnUiThread {
+                            btnCreateEvent.visibility = android.view.View.VISIBLE
+                            adapter.isAdmin = true
+                            adapter.notifyDataSetChanged()
+                        }
+                    }
+                }
+                override fun onFailure(e: Exception) {
+                    // Silently fail, button remains GONE
+                }
+            })
         }
 
         findViewById<Button>(R.id.btnLogout).setOnClickListener {
@@ -207,5 +264,34 @@ class EventListActivity : AppCompatActivity() {
                 }
             }
         )
+    }
+
+    private fun showAdminCancelDialog(event: Event) {
+        AlertDialog.Builder(this)
+            .setTitle("Cancel Event")
+            .setMessage("Are you sure you want to cancel the event \"${event.title}\"? This will make the event inactive for all users.")
+            .setPositiveButton("Yes, Cancel Event") { _, _ ->
+                repository.getEvent(event.id, object : FirebaseRepository.GetEventCallback {
+                    override fun onSuccess(fetchedEvent: Event) {
+                        fetchedEvent.cancelEvent()
+                        repository.saveEvent(fetchedEvent, object : EventService.EventCallback {
+                            override fun onSuccess(savedEvent: Event) {
+                                runOnUiThread {
+                                    Toast.makeText(this@EventListActivity, "Event cancelled successfully", Toast.LENGTH_SHORT).show()
+                                    viewModel.loadEvents()
+                                }
+                            }
+                            override fun onFailure(e: Exception) {
+                                runOnUiThread {
+                                    Toast.makeText(this@EventListActivity, "Failed to cancel event: ${e.message}", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        })
+                    }
+                    override fun onFailure(e: Exception) {}
+                })
+            }
+            .setNegativeButton("No", null)
+            .show()
     }
 }
