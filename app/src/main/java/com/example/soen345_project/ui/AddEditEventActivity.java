@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.soen345_project.R;
 import com.example.soen345_project.api.AdminController;
 import com.example.soen345_project.data.FirebaseRepository;
+import com.example.soen345_project.domain.InputValidator;
 import com.example.soen345_project.domain.models.Event;
 import com.example.soen345_project.domain.services.EventService;
 import java.text.ParseException;
@@ -95,23 +96,61 @@ public class AddEditEventActivity extends AppCompatActivity {
     }
 
     private void handleSave() {
+        // Clear previous errors
+        etTitle.setError(null);
+        etLocation.setError(null);
+        etCategory.setError(null);
+        etDate.setError(null);
+        etSeats.setError(null);
+
         String title    = etTitle.getText().toString().trim();
         String location = etLocation.getText().toString().trim();
         String category = etCategory.getText().toString().trim();
         String dateStr  = etDate.getText().toString().trim();
         String seatsStr = etSeats.getText().toString().trim();
 
-        if (title.isEmpty() || location.isEmpty() || category.isEmpty()
-                || dateStr.isEmpty() || seatsStr.isEmpty()) {
-            Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show();
+        String titleError = InputValidator.validateRequired(title, "Title");
+        if (titleError != null) {
+            etTitle.setError(titleError);
+            etTitle.requestFocus();
             return;
         }
 
+        String locationError = InputValidator.validateRequired(location, "Location");
+        if (locationError != null) {
+            etLocation.setError(locationError);
+            etLocation.requestFocus();
+            return;
+        }
+
+        String categoryError = InputValidator.validateRequired(category, "Category");
+        if (categoryError != null) {
+            etCategory.setError(categoryError);
+            etCategory.requestFocus();
+            return;
+        }
+
+        String dateError = InputValidator.validateRequired(dateStr, "Date");
+        if (dateError != null) {
+            etDate.setError(dateError);
+            etDate.requestFocus();
+            return;
+        }
+
+        String seatsError = InputValidator.validateEventSeats(seatsStr);
+        if (seatsError != null) {
+            etSeats.setError(seatsError);
+            etSeats.requestFocus();
+            return;
+        }
+
+        // Safe to parse now — validation already confirmed the format
         Date date;
         try {
             date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(dateStr);
         } catch (ParseException e) {
-            Toast.makeText(this, "Invalid date format. Use: yyyy-MM-dd", Toast.LENGTH_SHORT).show();
+            etDate.setError("Invalid date format. Use: yyyy-MM-dd");
+            etDate.requestFocus();
             return;
         }
 
@@ -131,8 +170,7 @@ public class AddEditEventActivity extends AppCompatActivity {
                     Toast.makeText(AddEditEventActivity.this, "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             });
-        }
-        else {
+        } else {
             adminController.addEvent(adminId, event, new EventService.EventCallback() {
                 @Override
                 public void onSuccess(Event e) {

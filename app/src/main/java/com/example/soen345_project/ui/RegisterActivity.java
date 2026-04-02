@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.soen345_project.R;
 import com.example.soen345_project.api.AuthController;
 import com.example.soen345_project.data.FirebaseRepository;
+import com.example.soen345_project.domain.InputValidator;
 import com.example.soen345_project.domain.models.User;
 import com.example.soen345_project.domain.services.AuthService;
 import com.google.firebase.auth.FirebaseAuth;
@@ -17,7 +18,6 @@ public class RegisterActivity extends AppCompatActivity {
 
     private AuthController authController;
     private EditText etName, etEmail, etPhone, etPassword;
-    // Add field at the top of RegisterActivity
     private String pendingVerificationId;
     private String pendingPhone;
     private String pendingName;
@@ -26,7 +26,6 @@ public class RegisterActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
-
 
         FirebaseAuth.getInstance().getFirebaseAuthSettings()
                 .setAppVerificationDisabledForTesting(true);
@@ -46,29 +45,51 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void handleRegister() {
+        // Clear previous errors
+        etName.setError(null);
+        etEmail.setError(null);
+        etPhone.setError(null);
+        etPassword.setError(null);
+
         String name     = etName.getText().toString().trim();
         String email    = etEmail.getText().toString().trim();
         String phone    = etPhone.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
 
-        if (name.isEmpty()) {
-            Toast.makeText(this, "Name is required", Toast.LENGTH_SHORT).show();
+        String nameError = InputValidator.validateRequired(name, "Name");
+        if (nameError != null) {
+            etName.setError(nameError);
+            etName.requestFocus();
             return;
         }
-        if (password.isEmpty()) {
-            Toast.makeText(this, "Password is required", Toast.LENGTH_SHORT).show();
+
+        String passwordError = InputValidator.validatePassword(password);
+        if (passwordError != null) {
+            etPassword.setError(passwordError);
+            etPassword.requestFocus();
             return;
         }
+
         if (email.isEmpty() && phone.isEmpty()) {
-            Toast.makeText(this, "Please enter either an email or a phone number", Toast.LENGTH_LONG).show();
+            etEmail.setError("Enter either an email or a phone number");
+            etPhone.setError("Enter either an email or a phone number");
+            etEmail.requestFocus();
             return;
         }
         if (!email.isEmpty() && !phone.isEmpty()) {
-            Toast.makeText(this, "Please enter either email or phone, not both", Toast.LENGTH_LONG).show();
+            etEmail.setError("Use only email or phone, not both");
+            etPhone.setError("Use only email or phone, not both");
+            etEmail.requestFocus();
             return;
         }
 
         if (!email.isEmpty()) {
+            String emailError = InputValidator.validateEmail(email);
+            if (emailError != null) {
+                etEmail.setError(emailError);
+                etEmail.requestFocus();
+                return;
+            }
             authController.registerWithEmail(email, password, name, new AuthService.AuthCallback() {
                 @Override
                 public void onSuccess(User user) {
@@ -81,8 +102,10 @@ public class RegisterActivity extends AppCompatActivity {
                 }
             });
         } else {
-            if (!phone.matches("^\\+[1-9]\\d{7,14}$")) {
-                Toast.makeText(this, "Use format: +15141234567", Toast.LENGTH_SHORT).show();
+            String phoneError = InputValidator.validatePhone(phone);
+            if (phoneError != null) {
+                etPhone.setError(phoneError);
+                etPhone.requestFocus();
                 return;
             }
             pendingPhone = phone;
@@ -105,7 +128,7 @@ public class RegisterActivity extends AppCompatActivity {
                         @Override
                         public void onCodeSent(String verificationId) {
                             pendingVerificationId = verificationId;
-                            showOtpDialog(); // prompt user to enter the SMS code
+                            showOtpDialog();
                         }
                         @Override
                         public void onFailure(Exception e) {
@@ -117,6 +140,7 @@ public class RegisterActivity extends AppCompatActivity {
             );
         }
     }
+
     private void showOtpDialog() {
         EditText otpInput = new EditText(this);
         otpInput.setHint("Enter 6-digit code");
