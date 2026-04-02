@@ -82,6 +82,33 @@ public class EventServiceTest {
             eventService.addEvent("adminId", null, mockEventCallback);
             verify(mockEventCallback).onFailure(any(Exception.class));
         }
+
+        // In AddEventTest, add these as non-parameterized tests:
+        @Test
+        public void addEvent_repositorySaveFailure_propagatesFailure() {
+            Event event = new Event("Comedy Show", new Date(), "Montreal", "Comedy", 100);
+            doAnswer(invocation -> {
+                EventService.EventCallback cb = invocation.getArgument(1);
+                cb.onFailure(new Exception("DB error"));
+                return null;
+            }).when(mockRepository).saveEvent(eq(event), any());
+
+            eventService.addEvent("adminId", event, mockEventCallback);
+            verify(mockEventCallback).onFailure(any(Exception.class));
+        }
+
+        @Test
+        public void addEvent_repositorySaveSuccess_callsOnSuccess() {
+            Event event = new Event("Comedy Show", new Date(), "Montreal", "Comedy", 100);
+            doAnswer(invocation -> {
+                EventService.EventCallback cb = invocation.getArgument(1);
+                cb.onSuccess(event);
+                return null;
+            }).when(mockRepository).saveEvent(eq(event), any());
+
+            eventService.addEvent("adminId", event, mockEventCallback);
+            verify(mockEventCallback).onSuccess(eq(event));
+        }
     }
 
     // Edit Event
@@ -217,6 +244,47 @@ public class EventServiceTest {
             eventService.cancelEvent("adminId", "eventId", mockEventCallback);
             verify(mockRepository).saveEvent(eq(mockEvent), any());
         }
+
+        @Test
+        public void cancelEvent_onSuccess_callsCallbackOnSuccess() {
+            Event mockEvent = mock(Event.class);
+            doAnswer(invocation -> {
+                FirebaseRepository.GetEventCallback callback = invocation.getArgument(1);
+                callback.onSuccess(mockEvent);
+                return null;
+            }).when(mockRepository).getEvent(eq("eventId"), any());
+
+            doAnswer(invocation -> {
+                EventService.EventCallback callback = invocation.getArgument(1);
+                callback.onSuccess(mockEvent);
+                return null;
+            }).when(mockRepository).saveEvent(eq(mockEvent), any());
+
+            eventService.cancelEvent("adminId", "eventId", mockEventCallback);
+            verify(mockEventCallback).onSuccess(eq(mockEvent));
+        }
+
+        @Test
+        public void cancelEvent_saveEventFails_propagatesFailure() {
+            Event mockEvent = mock(Event.class);
+            Exception saveError = new Exception("DB write failed");
+
+            doAnswer(invocation -> {
+                FirebaseRepository.GetEventCallback callback = invocation.getArgument(1);
+                callback.onSuccess(mockEvent);
+                return null;
+            }).when(mockRepository).getEvent(eq("eventId"), any());
+
+            doAnswer(invocation -> {
+                EventService.EventCallback callback = invocation.getArgument(1);
+                callback.onFailure(saveError);
+                return null;
+            }).when(mockRepository).saveEvent(eq(mockEvent), any());
+
+            eventService.cancelEvent("adminId", "eventId", mockEventCallback);
+            verify(mockEventCallback).onFailure(eq(saveError));
+        }
+
     }
 
     // List & Search Events
