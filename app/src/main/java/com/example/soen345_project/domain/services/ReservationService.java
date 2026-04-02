@@ -70,6 +70,10 @@ public class ReservationService {
         repository.getReservationsByUser(userId, callback);
     }
 
+    public void getReservationsByEvent(String eventId, ReservationListCallback callback) {
+        repository.getReservationsByEvent(eventId, callback);
+    }
+
     public void cancelReservation(String userId, String reservationId,
                                   ReservationCallback callback) {
         repository.getReservation(reservationId, new FirebaseRepository.GetReservationCallback() {

@@ -176,6 +176,29 @@ public class FirebaseRepository {
             });
     }
 
+    public void getReservationsByEvent(String eventId, ReservationService.ReservationListCallback callback) {
+        db.child("reservations").orderByChild("eventId").equalTo(eventId)
+            .addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot snapshot) {
+                    List<Reservation> reservations = new ArrayList<>();
+                    for (DataSnapshot child : snapshot.getChildren()) {
+                        Reservation reservation = child.getValue(Reservation.class);
+                        if (reservation != null) {
+                            reservation.setId(child.getKey());
+                            reservations.add(reservation);
+                        }
+                    }
+                    callback.onSuccess(reservations);
+                }
+
+                @Override
+                public void onCancelled(DatabaseError error) {
+                    callback.onFailure(error.toException());
+                }
+            });
+    }
+
     /**
      * Finds the active reservation for a specific user + event combination.
      * Returns null via onSuccess if none exists.

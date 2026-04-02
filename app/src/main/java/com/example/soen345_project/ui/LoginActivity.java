@@ -137,13 +137,7 @@ public class LoginActivity extends AppCompatActivity {
                 .show();
     }
     private void navigateBasedOnRole(User user) {
-        if (user.getIsAdmin()) {
-            Intent intent = new Intent(LoginActivity.this, AdminManagementActivity.class);
-            intent.putExtra("adminId", user.getId());
-            startActivity(intent);
-        } else {
-            startActivity(new Intent(LoginActivity.this, EventListActivity.class));
-        }
+        startActivity(new Intent(LoginActivity.this, EventListActivity.class));
         finish();
     }
 }

@@ -15,8 +15,12 @@ class FirebaseEventAdapter(
     private val events: List<Event>,
     // reservedEventIds: set of eventIds the current user has already reserved
     private val reservedEventIds: Map<String, String>, // eventId -> reservationId
+    var isAdmin: Boolean = false,
     private val onReserveClick: (Event) -> Unit,
-    private val onCancelClick: (Event, String) -> Unit  // event, reservationId
+    private val onCancelClick: (Event, String) -> Unit,  // event, reservationId
+    private val onEditClick: (Event) -> Unit = {},
+    private val onAdminCancelClick: (Event) -> Unit = {},
+    private val onViewReservationsClick: (Event) -> Unit = {}
 ) : RecyclerView.Adapter<FirebaseEventAdapter.EventViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): EventViewHolder {
@@ -52,6 +56,16 @@ class FirebaseEventAdapter(
                 onReserveClick(event)
             }
         }
+
+        // Admin features
+        if (isAdmin) {
+            holder.layoutAdminActions.visibility = View.VISIBLE
+            holder.btnEdit.setOnClickListener { onEditClick(event) }
+            holder.btnAdminCancel.setOnClickListener { onAdminCancelClick(event) }
+            holder.btnViewRes.setOnClickListener { onViewReservationsClick(event) }
+        } else {
+            holder.layoutAdminActions.visibility = View.GONE
+        }
     }
 
     override fun getItemCount(): Int = events.size
@@ -63,5 +77,10 @@ class FirebaseEventAdapter(
         val tvCategory: TextView = itemView.findViewById(R.id.tvEventCategory)
         val tvSeats: TextView = itemView.findViewById(R.id.tvEventSeats)
         val btnAction: Button = itemView.findViewById(R.id.btnReserveEvent)
+
+        val layoutAdminActions: View = itemView.findViewById(R.id.layoutAdminActions)
+        val btnEdit: Button = itemView.findViewById(R.id.btnEditEvent)
+        val btnAdminCancel: Button = itemView.findViewById(R.id.btnAdminCancelEvent)
+        val btnViewRes: Button = itemView.findViewById(R.id.btnViewReservations)
     }
 }
